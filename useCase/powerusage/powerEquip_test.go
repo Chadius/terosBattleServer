@@ -20,6 +20,7 @@ var _ = Describe("Squaddies can equip powers", func() {
 		teros = squaddie.NewSquaddie("Teros")
 		spear = power.NewPower("Spear")
 		spear.AttackEffect.CanBeEquipped = true
+		spear.AttackEffect.CanCounterattack = true
 
 		scimitar = power.NewPower("scimitar the second")
 		scimitar.AttackEffect.CanBeEquipped = true
@@ -101,5 +102,34 @@ var _ = Describe("Squaddies can equip powers", func() {
 		success := powerusage.SquaddieEquipPower(teros, notTerosPower.ID, powerRepo)
 		Expect(success).To(BeFalse())
 		Expect(powerusage.GetEquippedPower(teros, powerRepo).ID).To(Equal(spear.ID))
+	})
+
+	Context("Powers can be used to counter attack", func() {
+		It("Squaddie can counter because it equipped a weapon that can counter", func() {
+			terosPowerReferences := []*power.Reference{
+				spear.GetReference(),
+				scimitar.GetReference(),
+				blot.GetReference(),
+			}
+			powerusage.LoadAllOfSquaddieInnatePowers(teros, terosPowerReferences, powerRepo)
+			Expect(powerusage.CanSquaddieCounterWithEquippedWeapon(teros, powerRepo)).To(BeTrue())
+		})
+		It("Squaddie cannot counter because it equipped a weapon that cannot counter", func() {
+			terosPowerReferences := []*power.Reference{
+				spear.GetReference(),
+				scimitar.GetReference(),
+				blot.GetReference(),
+			}
+			powerusage.LoadAllOfSquaddieInnatePowers(teros, terosPowerReferences, powerRepo)
+			powerusage.SquaddieEquipPower(teros, scimitar.ID, powerRepo)
+			Expect(powerusage.CanSquaddieCounterWithEquippedWeapon(teros, powerRepo)).To(BeFalse())
+		})
+		It("Squaddie cannot counter because it does not have an equippable power", func() {
+			terosPowerReferences := []*power.Reference{
+				blot.GetReference(),
+			}
+			powerusage.LoadAllOfSquaddieInnatePowers(teros, terosPowerReferences, powerRepo)
+			Expect(powerusage.CanSquaddieCounterWithEquippedWeapon(teros, powerRepo)).To(BeFalse())
+		})
 	})
 })

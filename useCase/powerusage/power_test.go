@@ -11,7 +11,7 @@ import (
 
 var _ = Describe("Power uses with other Entities", func() {
 
-	Context("Calculate combination of Attacking Power and Squaddie", func() {
+	Context("Calculate expected damage from using attacking powers", func() {
 		var (
 			teros *squaddie.Squaddie
 			spear *power.Power
@@ -33,8 +33,17 @@ var _ = Describe("Power uses with other Entities", func() {
 			teros.Aim = 2
 			blot.AttackEffect.ToHitBonus = 1
 
-			totalToHitBonus := powerusage.GetPowerToHitBonusWhenUsedBySquaddie(blot, teros)
+			totalToHitBonus := powerusage.GetPowerToHitBonusWhenUsedBySquaddie(blot, teros, false)
 			Expect(totalToHitBonus).To(Equal(3))
+		})
+
+		It("Calculates the To Hit Bonus when counterattacking", func() {
+			teros.Aim = 2
+			blot.AttackEffect.ToHitBonus = 1
+			blot.AttackEffect.CounterattackToHitPenalty = -2
+
+			totalToHitBonus := powerusage.GetPowerToHitBonusWhenUsedBySquaddie(blot, teros, true)
+			Expect(totalToHitBonus).To(Equal(1))
 		})
 
 		Context("Calculate damage bonus", func() {
@@ -223,8 +232,16 @@ var _ = Describe("Power uses with other Entities", func() {
 				teros.Mind = 2
 				blot.AttackEffect.DamageBonus = 4
 
-				attackingPowerSummary := powerusage.GetExpectedDamage(spear, teros, bandit)
+				attackingPowerSummary := powerusage.GetExpectedDamage(&powerusage.AttackContext{
+					Power:           spear,
+					Attacker:        teros,
+					Target:          bandit,
+					IsCounterattack: false,
+				})
+				Expect(attackingPowerSummary.AttackingSquaddieID).To(Equal(teros.ID))
+				Expect(attackingPowerSummary.PowerID).To(Equal(spear.ID))
 				Expect(attackingPowerSummary.TargetSquaddieID).To(Equal(bandit.ID))
+				Expect(attackingPowerSummary.IsACounterAttack).To(BeFalse())
 				Expect(attackingPowerSummary.ChanceToHit).To(Equal(15))
 				Expect(attackingPowerSummary.DamageTaken).To(Equal(2))
 				Expect(attackingPowerSummary.ExpectedDamage).To(Equal(30))
@@ -242,7 +259,12 @@ var _ = Describe("Power uses with other Entities", func() {
 				teros.Mind = 2
 				blot.AttackEffect.DamageBonus = 4
 				blot.AttackEffect.ExtraBarrierDamage = 3
-				attackingPowerSummary := powerusage.GetExpectedDamage(blot, teros, bandit)
+				attackingPowerSummary := powerusage.GetExpectedDamage(&powerusage.AttackContext{
+					Power:           blot,
+					Attacker:        teros,
+					Target:          bandit,
+					IsCounterattack: false,
+				})
 				Expect(attackingPowerSummary.ChanceToHit).To(Equal(33))
 				Expect(attackingPowerSummary.DamageTaken).To(Equal(0))
 				Expect(attackingPowerSummary.ExpectedDamage).To(Equal(0))
@@ -275,7 +297,12 @@ var _ = Describe("Power uses with other Entities", func() {
 
 			It("Adds the chance to crit to the attack summary", func() {
 				spear.AttackEffect.CriticalHitThreshold = 4
-				attackingPowerSummary := powerusage.GetExpectedDamage(spear, teros, bandit)
+				attackingPowerSummary := powerusage.GetExpectedDamage(&powerusage.AttackContext{
+					Power:           spear,
+					Attacker:        teros,
+					Target:          bandit,
+					IsCounterattack: false,
+				})
 				Expect(attackingPowerSummary.ChanceToCritical).To(Equal(6))
 			})
 
@@ -284,16 +311,26 @@ var _ = Describe("Power uses with other Entities", func() {
 				bandit.MaxBarrier = 4
 				bandit.CurrentBarrier = 4
 				spear.AttackEffect.CriticalHitThreshold = 4
-				attackingPowerSummary := powerusage.GetExpectedDamage(spear, teros, bandit)
+				attackingPowerSummary := powerusage.GetExpectedDamage(&powerusage.AttackContext{
+					Power:           spear,
+					Attacker:        teros,
+					Target:          bandit,
+					IsCounterattack: false,
+				})
 				Expect(attackingPowerSummary.CriticalDamageTaken).To(Equal(3))
 				Expect(attackingPowerSummary.CriticalBarrierDamageTaken).To(Equal(4))
 				Expect(attackingPowerSummary.CriticalExpectedDamage).To(Equal(3 * 21))
 				Expect(attackingPowerSummary.CriticalExpectedBarrierDamage).To(Equal(4 * 21))
 			})
 
-			It("Does not factor critcal effects if the attack cannot crit", func() {
+			It("Does not factor critical effects if the attack cannot crit", func() {
 				spear.AttackEffect.CriticalHitThreshold = 0
-				attackingPowerSummary := powerusage.GetExpectedDamage(spear, teros, bandit)
+				attackingPowerSummary := powerusage.GetExpectedDamage(&powerusage.AttackContext{
+					Power:           spear,
+					Attacker:        teros,
+					Target:          bandit,
+					IsCounterattack: false,
+				})
 				Expect(attackingPowerSummary.ChanceToCritical).To(Equal(0))
 				Expect(attackingPowerSummary.CriticalDamageTaken).To(Equal(0))
 				Expect(attackingPowerSummary.CriticalBarrierDamageTaken).To(Equal(0))
@@ -549,6 +586,84 @@ var _ = Describe("Power uses with other Entities", func() {
 
 			powerusage.CommitPowerUse(powerReport, squaddieRepo, powerRepo)
 			Expect(powerusage.GetEquippedPower(mysticMage, powerRepo)).To(BeNil())
+		})
+	})
+	Context("Target attempts to counter", func() {
+		var (
+			teros *squaddie.Squaddie
+			spear *power.Power
+			blot *power.Power
+
+			bandit *squaddie.Squaddie
+			axe *power.Power
+
+			powerRepo *power.Repository
+			squaddieRepo *squaddie.Repository
+		)
+		BeforeEach(func() {
+			teros = squaddie.NewSquaddie("Teros")
+			spear = power.NewPower("Spear")
+			spear.AttackEffect.CanBeEquipped = true
+			spear.AttackEffect.CanCounterattack = true
+			spear.AttackEffect.CounterattackToHitPenalty = -2
+
+			axe = power.NewPower("axe the second")
+			axe.AttackEffect.CanBeEquipped = true
+			axe.AttackEffect.CanCounterattack = true
+			axe.AttackEffect.CounterattackToHitPenalty = -2
+
+			powerRepo = power.NewPowerRepository()
+			powerRepo.AddSlicePowerSource([]*power.Power{
+				spear,
+				axe,
+			})
+
+			blot = power.NewPower("Blot")
+			blot.PowerType = power.Spell
+
+			terosPowerReferences := []*power.Reference{
+				spear.GetReference(),
+				blot.GetReference(),
+			}
+			powerusage.LoadAllOfSquaddieInnatePowers(teros, terosPowerReferences, powerRepo)
+
+			bandit = squaddie.NewSquaddie("Bandit")
+			bandit.Name = "Bandit"
+			banditPowerReferences := []*power.Reference{
+				axe.GetReference(),
+			}
+			powerusage.LoadAllOfSquaddieInnatePowers(bandit, banditPowerReferences, powerRepo)
+
+			squaddieRepo = squaddie.NewSquaddieRepository()
+			squaddieRepo.AddSquaddies([]*squaddie.Squaddie{
+				teros,
+				bandit,
+			})
+		})
+		It("Target will counterattack if it has equipped a power that can counter", func() {
+			powerusage.SquaddieEquipPower(teros, spear.ID, powerRepo)
+			powerusage.SquaddieEquipPower(bandit, axe.ID, powerRepo)
+
+			expectedTerosCounterattackSummary := powerusage.GetExpectedDamage(&powerusage.AttackContext{
+				Power:           spear,
+				Attacker:        teros,
+				Target:          bandit,
+				IsCounterattack: false,
+			})
+			terosChanceToHit := expectedTerosCounterattackSummary.ChanceToHit
+
+			banditAttackSummary := powerusage.GetExpectedDamage(&powerusage.AttackContext{
+				Power:           axe,
+				Attacker:        bandit,
+				Target:          teros,
+				IsCounterattack: false,
+			})
+			Expect(banditAttackSummary.CounterAttack).NotTo(BeNil())
+			Expect(banditAttackSummary.CounterAttack.IsACounterAttack).To(BeTrue())
+			Expect(banditAttackSummary.CounterAttack.AttackingSquaddieID).To(Equal(teros.ID))
+			Expect(banditAttackSummary.CounterAttack.PowerID).To(Equal(spear.ID))
+			Expect(banditAttackSummary.CounterAttack.TargetSquaddieID).To(Equal(bandit.ID))
+			Expect(banditAttackSummary.CounterAttack.ChanceToHit).To(Equal(terosChanceToHit - 2))
 		})
 	})
 })

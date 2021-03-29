@@ -21,7 +21,12 @@ func GetPowerSummary(power *power.Power, user *squaddie.Squaddie, targetSquaddie
 	}
 
 	for _, target := range targetSquaddies {
-		summary.AttackEffectSummary = append(summary.AttackEffectSummary, GetExpectedDamage(power, user, target))
+		summary.AttackEffectSummary = append(summary.AttackEffectSummary, GetExpectedDamage(&AttackContext{
+			Power:           power,
+			Attacker:        user,
+			Target:          target,
+			IsCounterattack: false,
+		}))
 	}
 	return summary
 }

@@ -7,8 +7,12 @@ import (
 )
 
 // GetPowerToHitBonusWhenUsedBySquaddie calculates the total to hit bonus for the attacking squaddie and attacking power
-func GetPowerToHitBonusWhenUsedBySquaddie(attackingPower *power.Power, squaddie *squaddie.Squaddie) (toHit int) {
-	return attackingPower.AttackEffect.ToHitBonus + squaddie.Aim
+func GetPowerToHitBonusWhenUsedBySquaddie(attackingPower *power.Power, squaddie *squaddie.Squaddie, isCounterattack bool) (toHit int) {
+	counterattackPenalty := 0
+	if isCounterattack {
+		counterattackPenalty = attackingPower.AttackEffect.CounterattackToHitPenalty
+	}
+	return attackingPower.AttackEffect.ToHitBonus + squaddie.Aim + counterattackPenalty
 }
 
 // GetPowerDamageBonusWhenUsedBySquaddie calculates the total Damage bonus for the attacking squaddie and attacking power
@@ -94,26 +98,48 @@ func calculateDamageAfterInitialBarrierAbsorption(target *squaddie.Squaddie, dam
 }
 
 // AttackingPowerSummary gives a summary of the chance to hit and damage dealt by attacks.
-//  Expected damage counts the number of 36ths so we can use integers for fractional math.
 type AttackingPowerSummary struct {
+	AttackingSquaddieID				string
+	PowerID							string
 	TargetSquaddieID				string
-	CriticalHitThreshold          	int
-	ChanceToHit                   	int
-	DamageTaken                   	int
-	ExpectedDamage                	int
-	HitRate                       	int
-	BarrierDamageTaken            	int
-	ExpectedBarrierDamage         	int
-	ChanceToCritical              	int
-	CriticalDamageTaken           	int
-	CriticalBarrierDamageTaken    	int
-	CriticalExpectedDamage        	int
-	CriticalExpectedBarrierDamage 	int
+
+	CriticalHitThreshold			int
+	ChanceToHit						int
+	DamageTaken						int
+	HitRate							int
+	BarrierDamageTaken				int
+
+	//  Expected damage counts the number of 36ths so we can use integers for fractional math.
+	ExpectedDamage					int
+	ExpectedBarrierDamage			int
+	ChanceToCritical				int
+	CriticalExpectedDamage			int
+	CriticalExpectedBarrierDamage	int
+
+	CriticalDamageTaken				int
+	CriticalBarrierDamageTaken		int
+
+	IsACounterAttack				bool
+	CounterAttack                 	*AttackingPowerSummary
+}
+
+// AttackContext holds the information needed to calculate expected damage.
+type AttackContext struct {
+	Power           *power.Power
+	Attacker        *squaddie.Squaddie
+	Target          *squaddie.Squaddie
+	IsCounterattack bool
+	PowerRepo		*power.Repository
 }
 
 // GetExpectedDamage provides a summary of what the attacker's attackingPower will do against the given target.
-func GetExpectedDamage(attackingPower *power.Power, attacker *squaddie.Squaddie, target *squaddie.Squaddie) (battleSummary *AttackingPowerSummary) {
-	toHitBonus := GetPowerToHitBonusWhenUsedBySquaddie(attackingPower, attacker)
+func GetExpectedDamage(context *AttackContext) (battleSummary *AttackingPowerSummary) {
+	attackingPower := context.Power
+	attacker := context.Attacker
+	target := context.Target
+	isCounterattack := context.IsCounterattack
+
+	toHitBonus := GetPowerToHitBonusWhenUsedBySquaddie(attackingPower, attacker, isCounterattack)
 	toHitPenalty := GetPowerToHitPenaltyAgainstSquaddie(attackingPower, target)
 	totalChanceToHit := power.GetChanceToHitBasedOnHitRate(toHitBonus - toHitPenalty)
 
@@ -128,6 +154,8 @@ func GetExpectedDamage(attackingPower *power.Power, attacker *squaddie.Squaddie,
 	}
 
 	return &AttackingPowerSummary{
+		AttackingSquaddieID:			attacker.ID,
+		PowerID:						attackingPower.ID,
 		TargetSquaddieID: 				target.ID,
 		CriticalHitThreshold:			attackingPower.AttackEffect.CriticalHitThreshold,
 		HitRate:						toHitBonus - toHitPenalty,

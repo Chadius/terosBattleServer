@@ -39,3 +39,13 @@ func SquaddieEquipPower(squaddie *squaddie.Squaddie, powerToEquipID string, repo
 	squaddie.CurrentlyEquippedPowerID = powerToEquipID
 	return true
 }
+
+// CanSquaddieCounterWithEquippedWeapon returns true if the squaddie can use the currently equipped
+//   weapon for counter attacks.
+func CanSquaddieCounterWithEquippedWeapon(squaddie *squaddie.Squaddie, repo *power.Repository) bool {
+	currentlyEquippedPower := GetEquippedPower(squaddie, repo)
+	if currentlyEquippedPower == nil {
+		return false
+	}
+	return currentlyEquippedPower.AttackEffect.CanCounterattack
+}

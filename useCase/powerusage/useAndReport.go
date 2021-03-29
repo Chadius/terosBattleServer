@@ -25,7 +25,12 @@ func UsePowerAgainstSquaddiesAndGetResults(powerUsed *power.Power, actingSquaddi
 
 // GetAttackEffectResults looks at the actingSquaddie's powerUsed's AttackingEffect to figure out what happened to the targetSquaddie.
 func GetAttackEffectResults(powerUsed *power.Power, actingSquaddie *squaddie.Squaddie, targetSquaddie *squaddie.Squaddie, d6generator utility.SixSideGenerator) *report.AttackingPowerReport {
-	attackSummary := GetExpectedDamage(powerUsed, actingSquaddie, targetSquaddie)
+	attackSummary := GetExpectedDamage(&AttackContext{
+		Power:           powerUsed,
+		Attacker:        actingSquaddie,
+		Target:          targetSquaddie,
+		IsCounterattack: false,
+	})
 
 	didItHit := DetermineIfItHit(attackSummary, d6generator)
 	if !didItHit {
