@@ -2,29 +2,31 @@ package levelupbenefit_test
 
 import (
 	"github.com/cserrant/terosBattleServer/entity/levelupbenefit"
-	"github.com/kindrid/gotest"
-	"github.com/kindrid/gotest/should"
-	"testing"
+	. "gopkg.in/check.v1"
 )
 
-func TestRaisesAnErrorIfNoBenefitType(t *testing.T) {
+type LevelUpBenefitSuite struct{}
+
+var _ = Suite(&LevelUpBenefitSuite{})
+
+func (s *LevelUpBenefitSuite) TestRaisesAnErrorIfNoBenefitType(checker *C) {
 	badLevel := levelupbenefit.LevelUpBenefit{
 		ClassID:            "class0",
 	}
 	err := badLevel.CheckForErrors()
-	gotest.Assert(t, err.Error(), should.Equal, `unknown level up benefit type: ""`)
+	checker.Assert(err, ErrorMatches, `unknown level up benefit type: ""`)
 }
 
-func TestRaisesAnErrorIfNoClassID(t *testing.T) {
+func (s *LevelUpBenefitSuite) TestRaisesAnErrorIfNoClassID(checker *C) {
 	badLevel := levelupbenefit.LevelUpBenefit{
 		LevelUpBenefitType: levelupbenefit.Small,
 		ClassID:            "",
 	}
 	err := badLevel.CheckForErrors()
-	gotest.Assert(t, err.Error(), should.Equal, `no classID found for LevelUpBenefit`)
+	checker.Assert(err, ErrorMatches, `no classID found for LevelUpBenefit`)
 }
 
-func TestFiltersAList(t *testing.T) {
+func (s *LevelUpBenefitSuite) TestFiltersAList(checker *C) {
 	listToTest := []*levelupbenefit.LevelUpBenefit{
 		{
 			LevelUpBenefitType: levelupbenefit.Small,
@@ -49,26 +51,26 @@ func TestFiltersAList(t *testing.T) {
 	noLevelsFound := levelupbenefit.FilterLevelUpBenefits(listToTest, func(benefit *levelupbenefit.LevelUpBenefit) bool {
 		return false
 	})
-	gotest.Assert(t, noLevelsFound, should.HaveLength, 0)
+	checker.Assert(noLevelsFound, HasLen, 0)
 
 	allLevelsFound := levelupbenefit.FilterLevelUpBenefits(listToTest, func(benefit *levelupbenefit.LevelUpBenefit) bool {
 		return true
 	})
-	gotest.Assert(t, allLevelsFound, should.HaveLength, 3)
+	checker.Assert(allLevelsFound, HasLen, 3)
 
 
 	onlySmallLevels := levelupbenefit.FilterLevelUpBenefits(listToTest, func(benefit *levelupbenefit.LevelUpBenefit) bool {
 		return benefit.LevelUpBenefitType == levelupbenefit.Small
 	})
-	gotest.Assert(t, onlySmallLevels, should.HaveLength, 2)
+	checker.Assert(onlySmallLevels, HasLen, 2)
 
 	onlyBigLevels := levelupbenefit.FilterLevelUpBenefits(listToTest, func(benefit *levelupbenefit.LevelUpBenefit) bool {
 		return benefit.LevelUpBenefitType == levelupbenefit.Big
 	})
-	gotest.Assert(t, onlyBigLevels, should.HaveLength, 1)
+	checker.Assert(onlyBigLevels, HasLen, 1)
 
 	increasesAimLevels := levelupbenefit.FilterLevelUpBenefits(listToTest, func(benefit *levelupbenefit.LevelUpBenefit) bool {
 		return benefit.Aim > 0
 	})
-	gotest.Assert(t, increasesAimLevels, should.HaveLength, 2)
+	checker.Assert(increasesAimLevels, HasLen, 2)
 }

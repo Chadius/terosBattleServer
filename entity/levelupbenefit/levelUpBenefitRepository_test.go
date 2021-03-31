@@ -4,8 +4,7 @@ import (
 	"github.com/cserrant/terosBattleServer/entity/levelupbenefit"
 	"github.com/cserrant/terosBattleServer/entity/squaddieclass"
 	"github.com/cserrant/terosBattleServer/utility/testutility"
-	"github.com/kindrid/gotest"
-	"github.com/kindrid/gotest/should"
+	. "gopkg.in/check.v1"
 	"testing"
 )
 
@@ -18,7 +17,13 @@ var (
 	lotsOfBigLevels []*levelupbenefit.LevelUpBenefit
 )
 
-func setUp() {
+func Test(t *testing.T) { TestingT(t) }
+
+type LevelUpBenefitRepositorySuite struct{}
+
+var _ = Suite(&LevelUpBenefitRepositorySuite{})
+
+func (s *LevelUpBenefitRepositorySuite) SetUpTest(c *C) {
 	jsonByteStream = []byte(`[
           {
             "id":"abcdefg0",
@@ -75,7 +80,7 @@ func setUp() {
 	levelRepo.AddLevels(lotsOfBigLevels)
 }
 
-func tearDown() {
+func (s *LevelUpBenefitRepositorySuite) TearDownTest(c *C) {
 	levelRepo = nil
 	jsonByteStream = []byte(``)
 	yamlByteStream = []byte(``)
@@ -84,8 +89,7 @@ func tearDown() {
 	lotsOfBigLevels = []*levelupbenefit.LevelUpBenefit{}
 }
 
-func TestCreateLevelUpBenefitsFromJSON(t *testing.T) {
-	setUp()
+func (s *LevelUpBenefitRepositorySuite) TestCreateLevelUpBenefitsFromJSON(checker *C) {
 	levelRepo = levelupbenefit.NewLevelUpBenefitRepository()
 	jsonByteStream = []byte(`[
           {
@@ -113,15 +117,13 @@ func TestCreateLevelUpBenefitsFromJSON(t *testing.T) {
             }
       }
 ]`)
-	gotest.Assert(t, levelRepo.GetNumberOfLevelUpBenefits(), should.Equal, 0)
+	checker.Assert(levelRepo.GetNumberOfLevelUpBenefits(), Equals, 0)
 	success, _ := levelRepo.AddJSONSource(jsonByteStream)
-	gotest.Assert(t, success, should.BeTrue)
-	gotest.Assert(t, levelRepo.GetNumberOfLevelUpBenefits(), should.Equal, 1)
-	tearDown()
+	checker.Assert(success, Equals, true)
+	checker.Assert(levelRepo.GetNumberOfLevelUpBenefits(), Equals, 1)
 }
 
-func TestCreateLevelUpBenefitsFromYAML(t *testing.T) {
-	setUp()
+func (s *LevelUpBenefitRepositorySuite) TestCreateLevelUpBenefitsFromYAML(checker *C) {
 	levelRepo = levelupbenefit.NewLevelUpBenefitRepository()
 	yamlByteStream = []byte(
 		`
@@ -144,17 +146,15 @@ func TestCreateLevelUpBenefitsFromYAML(t *testing.T) {
     type: teleport
     hit_and_run": true
 `)
-	gotest.Assert(t, levelRepo.GetNumberOfLevelUpBenefits(), should.Equal, 0)
+	checker.Assert(levelRepo.GetNumberOfLevelUpBenefits(), Equals, 0)
 	success, _ := levelRepo.AddYAMLSource(yamlByteStream)
-	gotest.Assert(t, success, should.BeTrue)
-	gotest.Assert(t, levelRepo.GetNumberOfLevelUpBenefits(), should.Equal, 1)
-	tearDown()
+	checker.Assert(success, Equals, true)
+	checker.Assert(levelRepo.GetNumberOfLevelUpBenefits(), Equals, 1)
 }
 
-func TestCreateLevelUpBenefitsFromASlice(t *testing.T) {
-	setUp()
+func (s *LevelUpBenefitRepositorySuite) TestCreateLevelUpBenefitsFromASlice(checker *C) {
 	levelRepo = levelupbenefit.NewLevelUpBenefitRepository()
-	gotest.Assert(t, levelRepo.GetNumberOfLevelUpBenefits(), should.Equal, 0)
+	checker.Assert(levelRepo.GetNumberOfLevelUpBenefits(), Equals, 0)
 	success, _ := levelRepo.AddLevels([]*levelupbenefit.LevelUpBenefit{
 		{
 			LevelUpBenefitType: levelupbenefit.Small,
@@ -167,13 +167,11 @@ func TestCreateLevelUpBenefitsFromASlice(t *testing.T) {
 			ID:                 "level1",
 		},
 	})
-	gotest.Assert(t, success, should.BeTrue)
-	gotest.Assert(t, levelRepo.GetNumberOfLevelUpBenefits(), should.Equal, 2)
-	tearDown()
+	checker.Assert(success, Equals, true)
+	checker.Assert(levelRepo.GetNumberOfLevelUpBenefits(), Equals, 2)
 }
 
-func TestStopLoadingOnFirstInvalidLevelUpBenefit(t *testing.T) {
-	setUp()
+func (s *LevelUpBenefitRepositorySuite) TestStopLoadingOnFirstInvalidLevelUpBenefit(checker *C) {
 	levelRepo = levelupbenefit.NewLevelUpBenefitRepository()
 	byteStream := []byte(`[
           {
@@ -210,13 +208,11 @@ func TestStopLoadingOnFirstInvalidLevelUpBenefit(t *testing.T) {
           }
 ]`)
 	success, err := levelRepo.AddJSONSource(byteStream)
-	gotest.Assert(t, success, should.BeFalse)
-	gotest.Assert(t, err.Error(), should.Equal, `unknown level up benefit type: "unknown"`)
-	tearDown()
+	checker.Assert(success, Equals, false)
+	checker.Assert(err.Error(), Equals, `unknown level up benefit type: "unknown"`)
 }
 
-func TestCanSearchLevelUpBenefits(t *testing.T) {
-	setUp()
+func (s *LevelUpBenefitRepositorySuite) TestCanSearchLevelUpBenefits(checker *C) {
 	jsonByteStream = []byte(`[
          {
            "id":"abcdefg0",
@@ -245,32 +241,30 @@ func TestCanSearchLevelUpBenefits(t *testing.T) {
 ]`)
 	levelRepo = levelupbenefit.NewLevelUpBenefitRepository()
 	success, _ := levelRepo.AddJSONSource(jsonByteStream)
-	gotest.Assert(t, success, should.BeTrue)
+	checker.Assert(success, Equals, true)
 
 	benefits, err := levelRepo.GetLevelUpBenefitsByClassID("class0")
-	gotest.Assert(t, err, should.BeNil)
-	gotest.Assert(t, benefits, should.HaveLength, 1)
+	checker.Assert(err, IsNil)
+	checker.Assert(benefits, HasLen, 1)
 
 	firstBenefit := benefits[0]
-	gotest.Assert(t, firstBenefit.LevelUpBenefitType, should.Equal, levelupbenefit.Small)
-	gotest.Assert(t, firstBenefit.ClassID, should.Equal, "class0")
-	gotest.Assert(t, firstBenefit.MaxHitPoints, should.Equal, 1)
-	gotest.Assert(t, firstBenefit.Aim, should.Equal, 0)
-	gotest.Assert(t, firstBenefit.Strength, should.Equal, 2)
-	gotest.Assert(t, firstBenefit.Mind, should.Equal, 3)
-	gotest.Assert(t, firstBenefit.Dodge, should.Equal, 4)
-	gotest.Assert(t, firstBenefit.Deflect, should.Equal, 5)
-	gotest.Assert(t, firstBenefit.MaxBarrier, should.Equal, 6)
-	gotest.Assert(t, firstBenefit.Armor, should.Equal, 7)
+	checker.Assert(firstBenefit.LevelUpBenefitType, Equals, levelupbenefit.Small)
+	checker.Assert(firstBenefit.ClassID, Equals, "class0")
+	checker.Assert(firstBenefit.MaxHitPoints, Equals, 1)
+	checker.Assert(firstBenefit.Aim, Equals, 0)
+	checker.Assert(firstBenefit.Strength, Equals, 2)
+	checker.Assert(firstBenefit.Mind, Equals, 3)
+	checker.Assert(firstBenefit.Dodge, Equals, 4)
+	checker.Assert(firstBenefit.Deflect, Equals, 5)
+	checker.Assert(firstBenefit.MaxBarrier, Equals, 6)
+	checker.Assert(firstBenefit.Armor, Equals, 7)
 
-	gotest.Assert(t, firstBenefit.PowerIDGained, should.HaveLength, 1)
-	gotest.Assert(t, firstBenefit.PowerIDGained[0].Name, should.Equal, "Scimitar")
-	gotest.Assert(t, firstBenefit.PowerIDGained[0].ID, should.Equal, "deadbeef")
-	tearDown()
+	checker.Assert(firstBenefit.PowerIDGained, HasLen, 1)
+	checker.Assert(firstBenefit.PowerIDGained[0].Name, Equals, "Scimitar")
+	checker.Assert(firstBenefit.PowerIDGained[0].ID, Equals, "deadbeef")
 }
 
-func TestRaisesAnErrorWithNonexistentClassID(t *testing.T) {
-	setUp()
+func (s *LevelUpBenefitRepositorySuite) TestRaisesAnErrorWithNonexistentClassID(checker *C) {
 	jsonByteStream = []byte(`[
           {
             "id":"abcdefg0",
@@ -300,22 +294,18 @@ func TestRaisesAnErrorWithNonexistentClassID(t *testing.T) {
 	levelRepo.AddJSONSource(jsonByteStream)
 
 	benefits, err := levelRepo.GetLevelUpBenefitsByClassID("Class not found")
-	gotest.Assert(t, err.Error(), should.Equal, `no LevelUpBenefits for this class ID: "Class not found"`)
-	gotest.Assert(t, benefits, should.HaveLength, 0)
-	tearDown()
+	checker.Assert(err, ErrorMatches, `no LevelUpBenefits for this class ID: "Class not found"`)
+	checker.Assert(benefits, HasLen, 0)
 }
 
-func TestGetBigAndSmallLevelsForAGivenClass(t *testing.T) {
-	setUp()
+func (s *LevelUpBenefitRepositorySuite) TestGetBigAndSmallLevelsForAGivenClass(checker *C) {
 	levelsByBenefitType, err := levelRepo.GetLevelUpBenefitsForClassByType(mageClass.ID)
-	gotest.Assert(t, err, should.BeNil)
-	gotest.Assert(t, levelsByBenefitType[levelupbenefit.Small], should.HaveLength, 11)
-	gotest.Assert(t, levelsByBenefitType[levelupbenefit.Big], should.HaveLength, 4)
-	tearDown()
+	checker.Assert(err, IsNil)
+	checker.Assert(levelsByBenefitType[levelupbenefit.Small], HasLen, 11)
+	checker.Assert(levelsByBenefitType[levelupbenefit.Big], HasLen, 4)
 }
 
-func TestRaiseErrorIfClassDoesNotExist(t *testing.T) {
-	setUp()
+func (s *LevelUpBenefitRepositorySuite) TestRaiseErrorIfClassDoesNotExist(checker *C) {
 	jsonByteStream = []byte(`[
           {
             "id":"abcdefg0",
@@ -344,8 +334,7 @@ func TestRaiseErrorIfClassDoesNotExist(t *testing.T) {
 ]`)
 	levelRepo.AddJSONSource(jsonByteStream)
 	levelsByBenefitType, err := levelRepo.GetLevelUpBenefitsForClassByType("bad ID")
-	gotest.Assert(t, err.Error(), should.Equal, `no LevelUpBenefits for this class ID: "bad ID"`)
-	gotest.Assert(t, levelsByBenefitType[levelupbenefit.Small], should.HaveLength, 0)
-	gotest.Assert(t, levelsByBenefitType[levelupbenefit.Big], should.HaveLength, 0)
-	tearDown()
+	checker.Assert(err, ErrorMatches, `no LevelUpBenefits for this class ID: "bad ID"`)
+	checker.Assert(levelsByBenefitType[levelupbenefit.Small], HasLen, 0)
+	checker.Assert(levelsByBenefitType[levelupbenefit.Big], HasLen, 0)
 }

@@ -9,7 +9,7 @@ help:
 run: ## Run the script
 	go run .
 test: ## Test all files using ginkgo
-	ginkgo -r
+	go test -v ./...
 lint: ## Lint all the files using golint
 	golint ./...
 delete-merged-branches: ## Delete all local branches merged to main, unless they start with dev
