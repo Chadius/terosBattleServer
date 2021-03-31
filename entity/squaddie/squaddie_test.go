@@ -5,231 +5,192 @@ import (
 	"github.com/cserrant/terosBattleServer/entity/power"
 	"github.com/cserrant/terosBattleServer/entity/squaddie"
 	"github.com/cserrant/terosBattleServer/entity/squaddieclass"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	. "gopkg.in/check.v1"
 )
 
-var _ = Describe("Manage Squaddie stats and Powers", func() {
-	It("Sets the Squaddie name.", func() {
-		teros := squaddie.NewSquaddie("Teros")
-		Expect(teros.Name).To(Equal("Teros"))
-	})
+type SquaddieStatsSuite struct{
+	teros *squaddie.Squaddie
+	mageClass *squaddieclass.Class
+	mushroomClass *squaddieclass.Class
+}
 
-	It("Will get a random ID if none is given", func() {
-		teros := squaddie.NewSquaddie("Teros")
-		Expect(teros.ID).NotTo(BeNil())
-		Expect(teros.ID).NotTo(Equal(""))
-	})
+var _ = Suite(&SquaddieStatsSuite{})
 
-	It("can reset its ID upon command", func() {
-		teros := squaddie.NewSquaddie("Teros")
-		initialID := teros.ID
-		teros.SetNewIDToRandom()
-		Expect(teros.ID).NotTo(Equal(initialID))
-	})
+func (suite *SquaddieStatsSuite) SetUpTest(checker *C) {
+	suite.teros = squaddie.NewSquaddie("teros")
+	suite.mageClass = &squaddieclass.Class{ID: "1", Name: "Mage"}
+	suite.mushroomClass = &squaddieclass.Class{ID: "2", Name: "Mushroom"}
+}
 
-	It("Sets current HP to max.", func() {
-		teros := squaddie.NewSquaddie("Teros")
-		Expect(teros.MaxHitPoints).To(Equal(5))
-		teros.SetHPToMax()
-		Expect(teros.CurrentHitPoints).To(Equal(5))
-	})
+func (suite *SquaddieStatsSuite) TestNameIsSet(checker *C) {
+	checker.Assert(suite.teros.Name, Equals, "teros")
+}
 
-	It("Can set Barrier to Max Barrier", func() {
-		teros := squaddie.NewSquaddie("Teros")
-		teros.MaxBarrier = 2
-		teros.SetBarrierToMax()
-		Expect(teros.CurrentBarrier).To(Equal(2))
-	})
+func (suite *SquaddieStatsSuite) TestGetARandomIDUponCreation(checker *C) {
+	checker.Assert(suite.teros.ID, NotNil)
+	checker.Assert(suite.teros.ID, Not(Equals), "")
+}
 
-	Context("Default Settings", func() {
-		var teros *squaddie.Squaddie
-		BeforeEach(func() {
-			teros = squaddie.NewSquaddie("Teros")
-		})
-		It("Max Hit Points is set to 5", func() {
-			Expect(teros.MaxHitPoints).To(Equal(5))
-			Expect(teros.CurrentHitPoints).To(Equal(5))
-		})
-		It("Default movement is 3 on foot", func() {
-			Expect(teros.GetMovementDistancePerRound()).To(Equal(3))
-			Expect(teros.GetMovementType()).To(Equal(squaddie.MovementType(squaddie.Foot)))
-		})
-	})
+func (suite *SquaddieStatsSuite) TestGetANewID(checker *C) {
+	initialID := suite.teros.ID
+	suite.teros.SetNewIDToRandom()
+	checker.Assert(suite.teros.ID, Not(Equals), initialID)
+}
 
-	Context("Check Squaddies for valid data", func() {
-		It("Throws an error if Squaddie is created with wrong affiliation", func() {
-			newSquaddie := squaddie.NewSquaddie("Teros")
-			newSquaddie.Affiliation = "Unknown Affiliation"
-			err := squaddie.CheckSquaddieForErrors(newSquaddie)
-			Expect(err).NotTo(BeNil())
-			Expect(err.Error()).To(Equal("Squaddie has unknown affiliation: 'Unknown Affiliation'"))
-		})
-	})
+func (suite *SquaddieStatsSuite) TestSetMaxHPAndMatchToCurrentHP(checker *C) {
+	maxHP := suite.teros.MaxHitPoints
+	suite.teros.SetHPToMax()
+	checker.Assert(suite.teros.CurrentHitPoints, Equals, maxHP)
+}
 
-	Context("Can calculate net offense and defense", func() {
-		It("Can calculate defenses against physical attacks", func() {
-			teros := squaddie.NewSquaddie("Teros")
-			teros.Armor = 2
-			teros.Dodge = 3
-			teros.Deflect = 4
-			teros.MaxBarrier = 1
-			teros.SetBarrierToMax()
-			evasion, barrierDamageReduction, armorDamageReduction := teros.GetDefensiveStatsAgainstPhysical()
-			Expect(evasion).To(Equal(3))
-			Expect(barrierDamageReduction).To(Equal(1))
-			Expect(armorDamageReduction).To(Equal(2))
-		})
+func (suite *SquaddieStatsSuite) TestCanSetCurrentBarrierToMax(checker *C) {
+	suite.teros.MaxBarrier = 2
+	suite.teros.SetBarrierToMax()
+	checker.Assert(suite.teros.CurrentBarrier, Equals, 2)
+}
 
-		It("Can calculate defenses against spell attacks", func() {
-			teros := squaddie.NewSquaddie("Teros")
-			teros.Armor = 2
-			teros.Dodge = 3
-			teros.Deflect = 4
-			teros.MaxBarrier = 1
-			teros.SetBarrierToMax()
-			evasion, barrierDamageReduction, armorDamageReduction := teros.GetDefensiveStatsAgainstSpell()
-			Expect(evasion).To(Equal(4))
-			Expect(barrierDamageReduction).To(Equal(1))
-			Expect(armorDamageReduction).To(Equal(0))
-		})
+func (suite *SquaddieStatsSuite) TestDefaultHitPoints(checker *C) {
+	checker.Assert(suite.teros.MaxHitPoints, Equals, 5)
+	checker.Assert(suite.teros.CurrentHitPoints, Equals, 5)
+}
 
-		It("Can calculate offense with physical attacks", func() {
-			teros := squaddie.NewSquaddie("Teros")
-			teros.Aim = 2
-			teros.Strength = 3
-			teros.Mind = 4
-			toHitBonus, damageBonus := teros.GetOffensiveStatsWithPhysical()
-			Expect(toHitBonus).To(Equal(2))
-			Expect(damageBonus).To(Equal(3))
-		})
+func (suite *SquaddieStatsSuite) TestDefaultMovement(checker *C) {
+	checker.Assert(suite.teros.GetMovementDistancePerRound(), Equals, 3)
+	checker.Assert(suite.teros.GetMovementType(), Equals, squaddie.MovementType(squaddie.Foot))
+}
 
-		It("Can calculate offense with spell attacks", func() {
-			teros := squaddie.NewSquaddie("Teros")
-			teros.Aim = 2
-			teros.Strength = 3
-			teros.Mind = 4
-			toHitBonus, damageBonus := teros.GetOffensiveStatsWithSpell()
-			Expect(toHitBonus).To(Equal(2))
-			Expect(damageBonus).To(Equal(4))
-		})
-	})
+func (suite *SquaddieStatsSuite) TestRaisesErrorIfSquaddieHasUnknownAffiliation(checker *C) {
+	newSquaddie := squaddie.NewSquaddie("teros")
+	newSquaddie.Affiliation = "Unknown Affiliation"
+	err := squaddie.CheckSquaddieForErrors(newSquaddie)
+	checker.Assert(err, NotNil)
+	checker.Assert(err, ErrorMatches,"Squaddie has unknown affiliation: 'Unknown Affiliation'")
+}
 
-	Context("Manage powers", func() {
-		It("Can gain access to powers and report them", func() {
-			teros := squaddie.NewSquaddie("Teros")
-			Expect(teros.Name).To(Equal("Teros"))
+func (suite *SquaddieStatsSuite) TestDefenseAgainstPhysicalAttacks(checker *C) {
+	suite.teros.Armor = 2
+	suite.teros.Dodge = 3
+	suite.teros.Deflect = 4
+	suite.teros.MaxBarrier = 1
+	suite.teros.SetBarrierToMax()
+	evasion, barrierDamageReduction, armorDamageReduction := suite.teros.GetDefensiveStatsAgainstPhysical()
+	checker.Assert(evasion, Equals, 3)
+	checker.Assert(barrierDamageReduction, Equals, 1)
+	checker.Assert(armorDamageReduction, Equals, 2)
+}
 
-			attackA := power.NewPower("Attack Formation A")
-			teros.AddInnatePower(attackA)
+func (suite *SquaddieStatsSuite) TestDefenseAgainstSpellAttacks(checker *C) {
+	suite.teros.Armor = 2
+	suite.teros.Dodge = 3
+	suite.teros.Deflect = 4
+	suite.teros.MaxBarrier = 1
+	suite.teros.SetBarrierToMax()
+	evasion, barrierDamageReduction, armorDamageReduction := suite.teros.GetDefensiveStatsAgainstSpell()
+	checker.Assert(evasion, Equals, 4)
+	checker.Assert(barrierDamageReduction, Equals, 1)
+	checker.Assert(armorDamageReduction, Equals, 0)
+}
 
-			attackIDNamePairs := teros.GetInnatePowerIDNames()
-			Expect(len(attackIDNamePairs)).To(Equal(1))
-			Expect(attackIDNamePairs[0].Name).To(Equal("Attack Formation A"))
-			Expect(attackIDNamePairs[0].ID).To(Equal(attackA.ID))
-		})
+func (suite *SquaddieStatsSuite) TestOffenseWithPhysicalAttacks(checker *C) {
+	suite.teros.Aim = 2
+	suite.teros.Strength = 3
+	suite.teros.Mind = 4
+	toHitBonus, damageBonus := suite.teros.GetOffensiveStatsWithPhysical()
+	checker.Assert(toHitBonus, Equals, 2)
+	checker.Assert(damageBonus, Equals, 3)
+}
 
-		It("Clears squaddie known powers", func() {
-			teros := squaddie.NewSquaddie("Teros")
-			Expect(teros.Name).To(Equal("Teros"))
+func (suite *SquaddieStatsSuite) TestOffenseWithSpellAttacks(checker *C) {
+	suite.teros.Aim = 2
+	suite.teros.Strength = 3
+	suite.teros.Mind = 4
+	toHitBonus, damageBonus := suite.teros.GetOffensiveStatsWithSpell()
+	checker.Assert(toHitBonus, Equals, 2)
+	checker.Assert(damageBonus, Equals, 4)
+}
 
-			attackA := power.NewPower("Attack Formation A")
-			teros.AddInnatePower(attackA)
-			teros.ClearInnatePowers()
+func (suite *SquaddieStatsSuite) TestGainInnatePowers(checker *C) {
+	attackA := power.NewPower("Attack Formation A")
+	suite.teros.AddInnatePower(attackA)
 
-			attackIDNamePairs := teros.GetInnatePowerIDNames()
-			Expect(attackIDNamePairs).To(BeEmpty())
-		})
+	attackIDNamePairs := suite.teros.GetInnatePowerIDNames()
+	checker.Assert(attackIDNamePairs, HasLen, 1)
+	checker.Assert(attackIDNamePairs[0].Name, Equals, "Attack Formation A")
+	checker.Assert(attackIDNamePairs[0].ID, Equals, attackA.ID)
+}
 
-		It("Clears squaddie temporary power references", func() {
-			teros := squaddie.NewSquaddie("Teros")
-			teros.PowerReferences = []*power.Reference{{Name: "Pow pow", ID: "Power Wheels"}}
+func (suite *SquaddieStatsSuite) TestClearInnatePowers(checker *C) {
+	attackA := power.NewPower("Attack Formation A")
+	suite.teros.AddInnatePower(attackA)
+	suite.teros.ClearInnatePowers()
 
-			teros.ClearTemporaryPowerReferences()
+	attackIDNamePairs := suite.teros.GetInnatePowerIDNames()
+	checker.Assert(attackIDNamePairs, DeepEquals, []*power.Reference{})
+}
 
-			Expect(teros.PowerReferences).To(BeEmpty())
-		})
+func (suite *SquaddieStatsSuite) TestClearPowerReferences(checker *C) {
+	suite.teros.PowerReferences = []*power.Reference{{Name: "Pow pow", ID: "Power Wheels"}}
+	suite.teros.ClearTemporaryPowerReferences()
+	checker.Assert(suite.teros.PowerReferences, DeepEquals, []*power.Reference{})
+}
 
-		It("Can remove squaddie powers", func() {
-			teros := squaddie.NewSquaddie("Teros")
-			Expect(teros.Name).To(Equal("Teros"))
+func (suite *SquaddieStatsSuite) TestRemoveInnatePowers(checker *C) {
+	attackA := power.NewPower("Attack Formation A")
+	suite.teros.AddInnatePower(attackA)
+	suite.teros.RemovePowerByID(attackA.ID)
 
-			attackA := power.NewPower("Attack Formation A")
-			teros.AddInnatePower(attackA)
-			teros.RemovePowerByID(attackA.ID)
+	attackIDNamePairs := suite.teros.GetInnatePowerIDNames()
+	checker.Assert(attackIDNamePairs, DeepEquals, []*power.Reference{})
+}
 
-			attackIDNamePairs := teros.GetInnatePowerIDNames()
-			Expect(attackIDNamePairs).To(BeEmpty())
-		})
+func (suite *SquaddieStatsSuite) TestRaiseErrorIfTryToRegainSamePower(checker *C) {
+	attackA := power.NewPower("Attack Formation A")
+	err := suite.teros.AddInnatePower(attackA)
+	checker.Assert(err, IsNil)
+	err = suite.teros.AddInnatePower(attackA)
+	expectedErrorMessage := fmt.Sprintf(`squaddie "teros" already has innate power with ID "%s"`, attackA.ID)
+	checker.Assert(err, ErrorMatches, expectedErrorMessage)
 
-		It("Raises an error if you try to gain the same innate power", func() {
-			teros := squaddie.NewSquaddie("Teros")
-			Expect(teros.Name).To(Equal("Teros"))
+	attackIDNamePairs := suite.teros.GetInnatePowerIDNames()
+	checker.Assert(attackIDNamePairs, HasLen, 1)
+	checker.Assert(attackIDNamePairs[0].Name, Equals, "Attack Formation A")
+	checker.Assert(attackIDNamePairs[0].ID, Equals, attackA.ID)
+}
 
-			attackA := power.NewPower("Attack Formation A")
-			err := teros.AddInnatePower(attackA)
-			Expect(err).To(BeNil())
-			err = teros.AddInnatePower(attackA)
-			expectedErrorMessage := fmt.Sprintf(`squaddie "Teros" already has innate power with ID "%s"`, attackA.ID)
-			Expect(err.Error()).To(Equal(expectedErrorMessage))
+func (suite *SquaddieStatsSuite) TestNewSquaddieHasNoClassesOrLevels(checker *C) {
+	checker.Assert(suite.teros.CurrentClass, Equals, "")
+	checker.Assert(suite.teros.GetLevelCountsByClass(), DeepEquals, map[string]int{})
+}
 
-			attackIDNamePairs := teros.GetInnatePowerIDNames()
-			Expect(len(attackIDNamePairs)).To(Equal(1))
-			Expect(attackIDNamePairs[0].Name).To(Equal("Attack Formation A"))
-			Expect(attackIDNamePairs[0].ID).To(Equal(attackA.ID))
-		})
-	})
+func (suite *SquaddieStatsSuite) TestAddClassToSquaddie(checker *C) {
+	suite.teros.AddClass(suite.mageClass)
+	checker.Assert(suite.teros.GetLevelCountsByClass(), DeepEquals, map[string]int{suite.mageClass.ID: 0})
+}
 
-	Context("Class levels", func() {
-		var (
-			teros *squaddie.Squaddie
-			mageClass *squaddieclass.Class
-			mushroomClass *squaddieclass.Class
-		)
+func (suite *SquaddieStatsSuite) TestCanTellIfSquaddieAddedClass(checker *C) {
+	suite.teros.AddClass(suite.mageClass)
+	checker.Assert(suite.teros.HasAddedClass(suite.mageClass.ID), Equals, true)
+	checker.Assert(suite.teros.HasAddedClass(suite.mushroomClass.ID), Equals, false)
+}
 
-		BeforeEach(func() {
-			teros = squaddie.NewSquaddie("Teros")
-			mageClass = &squaddieclass.Class{ID: "1", Name: "Mage"}
-			mushroomClass = &squaddieclass.Class{ID: "2", Name: "Mushroom"}
-		})
+func (suite *SquaddieStatsSuite) TestChangeCurrentClass(checker *C) {
+	suite.teros.AddClass(suite.mageClass)
+	checker.Assert(suite.teros.CurrentClass, Equals, "")
+	err := suite.teros.SetClass(suite.mageClass.ID)
+	checker.Assert(err, IsNil)
+	checker.Assert(suite.teros.CurrentClass, Equals, suite.mageClass.ID)
+}
 
-		It("Has no class and level upon creation", func() {
-			Expect(teros.CurrentClass).To(Equal(""))
-			Expect(teros.GetLevelCountsByClass()).To(Equal(map[string]int{}))
-		})
+func (suite *SquaddieStatsSuite) TestCanSetBaseClass(checker *C) {
+	suite.teros.AddClass(suite.mageClass)
+	checker.Assert(suite.teros.BaseClassID, Equals, "")
+	suite.teros.SetBaseClassIfNoBaseClass(suite.mageClass.ID)
+	checker.Assert(suite.teros.BaseClassID, Equals, suite.mageClass.ID)
+}
 
-		It("Can add a class", func() {
-			Expect(teros.GetLevelCountsByClass()).To(BeEmpty())
-			teros.AddClass(mageClass)
-			Expect(teros.GetLevelCountsByClass()).To(Equal(map[string]int{mageClass.ID: 0}))
-		})
-
-		It("Can tell if a class was already added", func() {
-			teros.AddClass(mageClass)
-			Expect(teros.HasAddedClass(mageClass.ID)).To(BeTrue())
-			Expect(teros.HasAddedClass(mushroomClass.ID)).To(BeFalse())
-		})
-
-		It("Can set the current class", func() {
-			teros.AddClass(mageClass)
-			Expect(teros.CurrentClass).To(Equal(""))
-			err := teros.SetClass(mageClass.ID)
-			Expect(err).To(BeNil())
-			Expect(teros.CurrentClass).To(Equal(mageClass.ID))
-		})
-
-		It("Sets the base class", func() {
-			teros.AddClass(mageClass)
-			Expect(teros.BaseClassID).To(Equal(""))
-			teros.SetBaseClassIfNoBaseClass(mageClass.ID)
-			Expect(teros.BaseClassID).To(Equal(mageClass.ID))
-		})
-
-		It("Raise an error if you set to a class that does not exist", func() {
-			teros.AddClass(mageClass)
-			Expect(teros.CurrentClass).To(Equal(""))
-			err := teros.SetClass(mushroomClass.ID)
-			Expect(err.Error()).To(Equal(`cannot switch "Teros" to unknown class "2"`))
-		})
-	})
-})
+func (suite *SquaddieStatsSuite) TestRaiseErrorIfClassDoesNotExist(checker *C) {
+	suite.teros.AddClass(suite.mageClass)
+	checker.Assert(suite.teros.CurrentClass, Equals, "")
+	err := suite.teros.SetClass(suite.mushroomClass.ID)
+	checker.Assert(err.Error(), Equals, `cannot switch "teros" to unknown class "2"`)
+}
