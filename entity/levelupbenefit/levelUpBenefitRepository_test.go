@@ -4,19 +4,22 @@ import (
 	"github.com/cserrant/terosBattleServer/entity/levelupbenefit"
 	"github.com/cserrant/terosBattleServer/entity/squaddieclass"
 	"github.com/cserrant/terosBattleServer/utility/testutility"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	"github.com/kindrid/gotest"
+	"github.com/kindrid/gotest/should"
+	"testing"
 )
 
-var _ = Describe("CRUD LevelUpBenefits", func() {
-	var (
-		repo *levelupbenefit.Repository
-		jsonByteStream []byte
-		yamlByteStream []byte
-	)
-	BeforeEach(func() {
-		repo = levelupbenefit.NewLevelUpBenefitRepository()
-		jsonByteStream = []byte(`[
+var (
+	levelRepo *levelupbenefit.Repository
+	jsonByteStream []byte
+	yamlByteStream []byte
+	mageClass *squaddieclass.Class
+	lotsOfSmallLevels []*levelupbenefit.LevelUpBenefit
+	lotsOfBigLevels []*levelupbenefit.LevelUpBenefit
+)
+
+func setUp() {
+	jsonByteStream = []byte(`[
           {
             "id":"abcdefg0",
             "level_up_benefit_type": "small",
@@ -42,8 +45,86 @@ var _ = Describe("CRUD LevelUpBenefits", func() {
             }
       }
 ]`)
-		yamlByteStream = []byte(
-`
+
+	mageClass = &squaddieclass.Class{
+		ID:                "class1",
+		Name:              "Mage",
+		BaseClassRequired: false,
+	}
+
+	lotsOfSmallLevels = (&testutility.LevelGenerator{
+		Instructions: &testutility.LevelGeneratorInstruction{
+			NumberOfLevels: 11,
+			ClassID:        mageClass.ID,
+			PrefixLevelID:  "lotsLevelsSmall",
+			Type:           levelupbenefit.Small,
+		},
+	}).Build()
+
+	lotsOfBigLevels = (&testutility.LevelGenerator{
+		Instructions: &testutility.LevelGeneratorInstruction{
+			NumberOfLevels: 4,
+			ClassID:        mageClass.ID,
+			PrefixLevelID:  "lotsLevelsBig",
+			Type:           levelupbenefit.Big,
+		},
+	}).Build()
+
+	levelRepo = levelupbenefit.NewLevelUpBenefitRepository()
+	levelRepo.AddLevels(lotsOfSmallLevels)
+	levelRepo.AddLevels(lotsOfBigLevels)
+}
+
+func tearDown() {
+	levelRepo = nil
+	jsonByteStream = []byte(``)
+	yamlByteStream = []byte(``)
+	mageClass = nil
+	lotsOfSmallLevels = []*levelupbenefit.LevelUpBenefit{}
+	lotsOfBigLevels = []*levelupbenefit.LevelUpBenefit{}
+}
+
+func TestCreateLevelUpBenefitsFromJSON(t *testing.T) {
+	setUp()
+	levelRepo = levelupbenefit.NewLevelUpBenefitRepository()
+	jsonByteStream = []byte(`[
+          {
+            "id":"abcdefg0",
+            "level_up_benefit_type": "small",
+            "class_id": "class0",
+            "max_hit_points": 1,
+            "aim": 0,
+            "strength": 2,
+            "mind": 3,
+            "dodge": 4,
+            "deflect": 5,
+            "max_barrier": 6,
+            "armor": 7,
+            "powers": [
+              {
+                "name": "Scimitar",
+                "id": "deadbeef"
+              }
+            ],
+            "movement": {
+              "distance": 1,
+              "type": "teleport",
+              "hit_and_run": true
+            }
+      }
+]`)
+	gotest.Assert(t, levelRepo.GetNumberOfLevelUpBenefits(), should.Equal, 0)
+	success, _ := levelRepo.AddJSONSource(jsonByteStream)
+	gotest.Assert(t, success, should.BeTrue)
+	gotest.Assert(t, levelRepo.GetNumberOfLevelUpBenefits(), should.Equal, 1)
+	tearDown()
+}
+
+func TestCreateLevelUpBenefitsFromYAML(t *testing.T) {
+	setUp()
+	levelRepo = levelupbenefit.NewLevelUpBenefitRepository()
+	yamlByteStream = []byte(
+		`
 - id: abcdefg0
   class_id: class0
   level_up_benefit_type: small
@@ -63,120 +144,38 @@ var _ = Describe("CRUD LevelUpBenefits", func() {
     type: teleport
     hit_and_run": true
 `)
+	gotest.Assert(t, levelRepo.GetNumberOfLevelUpBenefits(), should.Equal, 0)
+	success, _ := levelRepo.AddYAMLSource(yamlByteStream)
+	gotest.Assert(t, success, should.BeTrue)
+	gotest.Assert(t, levelRepo.GetNumberOfLevelUpBenefits(), should.Equal, 1)
+	tearDown()
+}
+
+func TestCreateLevelUpBenefitsFromASlice(t *testing.T) {
+	setUp()
+	levelRepo = levelupbenefit.NewLevelUpBenefitRepository()
+	gotest.Assert(t, levelRepo.GetNumberOfLevelUpBenefits(), should.Equal, 0)
+	success, _ := levelRepo.AddLevels([]*levelupbenefit.LevelUpBenefit{
+		{
+			LevelUpBenefitType: levelupbenefit.Small,
+			ClassID:            "class0",
+			ID:                 "level0",
+		},
+		{
+			LevelUpBenefitType: levelupbenefit.Small,
+			ClassID:            "class0",
+			ID:                 "level1",
+		},
 	})
-	Context("Create LevelUpBenefit objects from different sources", func() {
-		It("Can create LevelUpBenefits from JSON", func() {
-			Expect(repo.GetNumberOfLevelUpBenefits()).To(Equal(0))
-			success, _ := repo.AddJSONSource(jsonByteStream)
-			Expect(success).To(BeTrue())
-			Expect(repo.GetNumberOfLevelUpBenefits()).To(Equal(1))
-		})
-		It("Can create LevelUpBenefits from YAML", func() {
-			Expect(repo.GetNumberOfLevelUpBenefits()).To(Equal(0))
-			success, _ := repo.AddYAMLSource(yamlByteStream)
-			Expect(success).To(BeTrue())
-			Expect(repo.GetNumberOfLevelUpBenefits()).To(Equal(1))
-		})
-		It("Can add LevelUpBenefits directly", func() {
-			Expect(repo.GetNumberOfLevelUpBenefits()).To(Equal(0))
-			success, _ := repo.AddLevels([]*levelupbenefit.LevelUpBenefit{
-				{
-					LevelUpBenefitType: levelupbenefit.Small,
-					ClassID:            "class0",
-					ID:                 "level0",
-				},
-				{
-					LevelUpBenefitType: levelupbenefit.Small,
-					ClassID:            "class0",
-					ID:                 "level1",
-				},
-			})
-			Expect(success).To(BeTrue())
-			Expect(repo.GetNumberOfLevelUpBenefits()).To(Equal(2))
-		})
-	})
-	Context("Can search and retrieve LevelUpBenefit objects using descriptors", func() {
-		var (
-			mageClass *squaddieclass.Class
-			lotsOfSmallLevels []*levelupbenefit.LevelUpBenefit
-			lotsOfBigLevels []*levelupbenefit.LevelUpBenefit
-			levelRepo *levelupbenefit.Repository
-		)
-		BeforeEach(func() {
-			mageClass = &squaddieclass.Class{
-				ID:                "class1",
-				Name:              "Mage",
-				BaseClassRequired: false,
-			}
+	gotest.Assert(t, success, should.BeTrue)
+	gotest.Assert(t, levelRepo.GetNumberOfLevelUpBenefits(), should.Equal, 2)
+	tearDown()
+}
 
-			lotsOfSmallLevels = (&testutility.LevelGenerator{
-				Instructions: &testutility.LevelGeneratorInstruction{
-					NumberOfLevels: 11,
-					ClassID:        mageClass.ID,
-					PrefixLevelID:  "lotsLevelsSmall",
-					Type:           levelupbenefit.Small,
-				},
-			}).Build()
-
-			lotsOfBigLevels = (&testutility.LevelGenerator{
-				Instructions: &testutility.LevelGeneratorInstruction{
-					NumberOfLevels: 4,
-					ClassID:        mageClass.ID,
-					PrefixLevelID:  "lotsLevelsBig",
-					Type:           levelupbenefit.Big,
-				},
-			}).Build()
-
-			levelRepo = levelupbenefit.NewLevelUpBenefitRepository()
-			levelRepo.AddLevels(lotsOfSmallLevels)
-			levelRepo.AddLevels(lotsOfBigLevels)
-		})
-		It("Can get LevelUpBenefits by squaddie and class", func() {
-			success, _ := repo.AddJSONSource(jsonByteStream)
-			Expect(success).To(BeTrue())
-
-			benefits, err := repo.GetLevelUpBenefitsByClassID("class0")
-			Expect(err).To(BeNil())
-			Expect(len(benefits)).To(Equal(1))
-
-			firstBenefit := benefits[0]
-			Expect(firstBenefit.LevelUpBenefitType).To(Equal(levelupbenefit.Small))
-			Expect(firstBenefit.ClassID).To(Equal("class0"))
-			Expect(firstBenefit.MaxHitPoints).To(Equal(1))
-			Expect(firstBenefit.Aim).To(Equal(0))
-			Expect(firstBenefit.Strength).To(Equal(2))
-			Expect(firstBenefit.Mind).To(Equal(3))
-			Expect(firstBenefit.Dodge).To(Equal(4))
-			Expect(firstBenefit.Deflect).To(Equal(5))
-			Expect(firstBenefit.MaxBarrier).To(Equal(6))
-			Expect(firstBenefit.Armor).To(Equal(7))
-
-			Expect(firstBenefit.PowerIDGained).To(HaveLen(1))
-			Expect(firstBenefit.PowerIDGained[0].Name).To(Equal("Scimitar"))
-			Expect(firstBenefit.PowerIDGained[0].ID).To(Equal("deadbeef"))
-		})
-		It("Raises an error if you search for wrong LevelUpBenefits", func() {
-			repo.AddJSONSource(jsonByteStream)
-
-			benefits, err := repo.GetLevelUpBenefitsByClassID("Class not found")
-			Expect(err.Error()).To(Equal(`no LevelUpBenefits for this class ID: "Class not found"`))
-			Expect(benefits).To(HaveLen(0))
-		})
-		It("can give you big and small levels for a given class", func() {
-			levelsByBenefitType, err := levelRepo.GetLevelUpBenefitsForClassByType(mageClass.ID)
-			Expect(err).To(BeNil())
-			Expect(levelsByBenefitType[levelupbenefit.Small]).To(HaveLen(11))
-			Expect(levelsByBenefitType[levelupbenefit.Big]).To(HaveLen(4))
-		})
-		It("raises an error if the class does not exist", func() {
-			levelsByBenefitType, err := levelRepo.GetLevelUpBenefitsForClassByType("bad ID")
-			Expect(err.Error()).To(Equal(`no LevelUpBenefits for this class ID: "bad ID"`))
-			Expect(levelsByBenefitType[levelupbenefit.Small]).To(HaveLen(0))
-			Expect(levelsByBenefitType[levelupbenefit.Big]).To(HaveLen(0))
-		})
-	})
-	It("Stops loading LevelUpBenefits upon validating the first invalid LevelUpBenefit", func() {
-		byteStream := []byte(`[
+func TestStopLoadingOnFirstInvalidLevelUpBenefit(t *testing.T) {
+	setUp()
+	levelRepo = levelupbenefit.NewLevelUpBenefitRepository()
+	byteStream := []byte(`[
           {
             "id":"abcdefg0",
             "class_id": "class0",
@@ -210,8 +209,143 @@ var _ = Describe("CRUD LevelUpBenefits", func() {
 				"powers": [{"name": "Scimitar", "id": "deadbeef"}]
           }
 ]`)
-		success, err := repo.AddJSONSource(byteStream)
-		Expect(success).To(BeFalse())
-		Expect(err.Error()).To(Equal(`unknown level up benefit type: "unknown"`))
-	})
-})
+	success, err := levelRepo.AddJSONSource(byteStream)
+	gotest.Assert(t, success, should.BeFalse)
+	gotest.Assert(t, err.Error(), should.Equal, `unknown level up benefit type: "unknown"`)
+	tearDown()
+}
+
+func TestCanSearchLevelUpBenefits(t *testing.T) {
+	setUp()
+	jsonByteStream = []byte(`[
+         {
+           "id":"abcdefg0",
+           "level_up_benefit_type": "small",
+           "class_id": "class0",
+           "max_hit_points": 1,
+           "aim": 0,
+           "strength": 2,
+           "mind": 3,
+           "dodge": 4,
+           "deflect": 5,
+           "max_barrier": 6,
+           "armor": 7,
+           "powers": [
+             {
+               "name": "Scimitar",
+               "id": "deadbeef"
+             }
+           ],
+           "movement": {
+             "distance": 1,
+             "type": "teleport",
+             "hit_and_run": true
+           }
+     }
+]`)
+	levelRepo = levelupbenefit.NewLevelUpBenefitRepository()
+	success, _ := levelRepo.AddJSONSource(jsonByteStream)
+	gotest.Assert(t, success, should.BeTrue)
+
+	benefits, err := levelRepo.GetLevelUpBenefitsByClassID("class0")
+	gotest.Assert(t, err, should.BeNil)
+	gotest.Assert(t, benefits, should.HaveLength, 1)
+
+	firstBenefit := benefits[0]
+	gotest.Assert(t, firstBenefit.LevelUpBenefitType, should.Equal, levelupbenefit.Small)
+	gotest.Assert(t, firstBenefit.ClassID, should.Equal, "class0")
+	gotest.Assert(t, firstBenefit.MaxHitPoints, should.Equal, 1)
+	gotest.Assert(t, firstBenefit.Aim, should.Equal, 0)
+	gotest.Assert(t, firstBenefit.Strength, should.Equal, 2)
+	gotest.Assert(t, firstBenefit.Mind, should.Equal, 3)
+	gotest.Assert(t, firstBenefit.Dodge, should.Equal, 4)
+	gotest.Assert(t, firstBenefit.Deflect, should.Equal, 5)
+	gotest.Assert(t, firstBenefit.MaxBarrier, should.Equal, 6)
+	gotest.Assert(t, firstBenefit.Armor, should.Equal, 7)
+
+	gotest.Assert(t, firstBenefit.PowerIDGained, should.HaveLength, 1)
+	gotest.Assert(t, firstBenefit.PowerIDGained[0].Name, should.Equal, "Scimitar")
+	gotest.Assert(t, firstBenefit.PowerIDGained[0].ID, should.Equal, "deadbeef")
+	tearDown()
+}
+
+func TestRaisesAnErrorWithNonexistentClassID(t *testing.T) {
+	setUp()
+	jsonByteStream = []byte(`[
+          {
+            "id":"abcdefg0",
+            "level_up_benefit_type": "small",
+            "class_id": "class0",
+            "max_hit_points": 1,
+            "aim": 0,
+            "strength": 2,
+            "mind": 3,
+            "dodge": 4,
+            "deflect": 5,
+            "max_barrier": 6,
+            "armor": 7,
+            "powers": [
+              {
+                "name": "Scimitar",
+                "id": "deadbeef"
+              }
+            ],
+            "movement": {
+              "distance": 1,
+              "type": "teleport",
+              "hit_and_run": true
+            }
+      }
+]`)
+	levelRepo.AddJSONSource(jsonByteStream)
+
+	benefits, err := levelRepo.GetLevelUpBenefitsByClassID("Class not found")
+	gotest.Assert(t, err.Error(), should.Equal, `no LevelUpBenefits for this class ID: "Class not found"`)
+	gotest.Assert(t, benefits, should.HaveLength, 0)
+	tearDown()
+}
+
+func TestGetBigAndSmallLevelsForAGivenClass(t *testing.T) {
+	setUp()
+	levelsByBenefitType, err := levelRepo.GetLevelUpBenefitsForClassByType(mageClass.ID)
+	gotest.Assert(t, err, should.BeNil)
+	gotest.Assert(t, levelsByBenefitType[levelupbenefit.Small], should.HaveLength, 11)
+	gotest.Assert(t, levelsByBenefitType[levelupbenefit.Big], should.HaveLength, 4)
+	tearDown()
+}
+
+func TestRaiseErrorIfClassDoesNotExist(t *testing.T) {
+	setUp()
+	jsonByteStream = []byte(`[
+          {
+            "id":"abcdefg0",
+            "level_up_benefit_type": "small",
+            "class_id": "class0",
+            "max_hit_points": 1,
+            "aim": 0,
+            "strength": 2,
+            "mind": 3,
+            "dodge": 4,
+            "deflect": 5,
+            "max_barrier": 6,
+            "armor": 7,
+            "powers": [
+              {
+                "name": "Scimitar",
+                "id": "deadbeef"
+              }
+            ],
+            "movement": {
+              "distance": 1,
+              "type": "teleport",
+              "hit_and_run": true
+            }
+      }
+]`)
+	levelRepo.AddJSONSource(jsonByteStream)
+	levelsByBenefitType, err := levelRepo.GetLevelUpBenefitsForClassByType("bad ID")
+	gotest.Assert(t, err.Error(), should.Equal, `no LevelUpBenefits for this class ID: "bad ID"`)
+	gotest.Assert(t, levelsByBenefitType[levelupbenefit.Small], should.HaveLength, 0)
+	gotest.Assert(t, levelsByBenefitType[levelupbenefit.Big], should.HaveLength, 0)
+	tearDown()
+}
