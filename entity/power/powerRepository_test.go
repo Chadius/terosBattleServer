@@ -2,77 +2,78 @@ package power_test
 
 import (
 	"github.com/cserrant/terosBattleServer/entity/power"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	. "gopkg.in/check.v1"
 )
 
-var _ = Describe("CRUD Powers", func() {
-	var (
-		repo *power.Repository
-	)
-	BeforeEach(func() {
-		repo = power.NewPowerRepository()
-	})
-	It("Can add powers directly", func() {
-		Expect(repo.GetNumberOfPowers()).To(Equal(0))
-		spear := power.NewPower("Spear")
-		spear.PowerType = power.Physical
-		newPowers := []*power.Power{spear}
-		success, _ := repo.AddSlicePowerSource(newPowers)
-		Expect(success).To(BeTrue())
-		Expect(repo.GetNumberOfPowers()).To(Equal(1))
-	})
-	Context("Getting Powers from repo", func() {
-		var (
-			spear *power.Power
-			spear2 *power.Power
-			repo *power.Repository
-		)
+type PowerCreationSuite struct{
+	spear *power.Power
+	spear2 *power.Power
+	repo *power.Repository
+}
 
-		BeforeEach(func() {
-			spear = power.NewPower("Spear")
-			spear.PowerType = power.Physical
-			spear.ID = "spearLevel1"
-			spear.AttackEffect.ToHitBonus = 1
+var _ = Suite(&PowerCreationSuite{})
 
-			spear2 = power.NewPower("Spear")
-			spear2.PowerType = power.Physical
-			spear2.ID = "spearLevel2"
-			spear2.AttackEffect.ToHitBonus = 2
+func (suite *PowerCreationSuite) TestGenerateRandomIDForNewPowers(checker *C) {
+	powerWithoutID := power.NewPower("New Attack")
+	checker.Assert(powerWithoutID.ID, NotNil)
+	checker.Assert(powerWithoutID.ID, Not(Equals), "")
+}
 
-			newPowers := []*power.Power{spear, spear2}
+func (suite *PowerCreationSuite) SetUpTest(checker *C) {
+	suite.spear = power.NewPower("Spear")
+	suite.spear.PowerType = power.Physical
+	suite.spear.ID = "spearLevel1"
+	suite.spear.AttackEffect.ToHitBonus = 1
 
-			repo = power.NewPowerRepository()
-			repo.AddSlicePowerSource(newPowers)
-		})
-		It("Tracks powers by ID even if they have same name", func() {
-			Expect(repo.GetNumberOfPowers()).To(Equal(2))
-		})
-		It("Can get powers by ID", func() {
-			spearLevel1FromRepo := repo.GetPowerByID(spear.ID)
-			Expect(spearLevel1FromRepo.Name).To(Equal("Spear"))
-			Expect(spearLevel1FromRepo.ID).To(Equal(spear.ID))
-			Expect(spearLevel1FromRepo.AttackEffect.ToHitBonus).To(Equal(spear.AttackEffect.ToHitBonus))
+	suite.spear2 = power.NewPower("Spear")
+	suite.spear2.PowerType = power.Physical
+	suite.spear2.ID = "spearLevel2"
+	suite.spear2.AttackEffect.ToHitBonus = 2
 
-			spearLevel2FromRepo := repo.GetPowerByID(spear2.ID)
-			Expect(spearLevel2FromRepo.Name).To(Equal("Spear"))
-			Expect(spearLevel2FromRepo.ID).To(Equal(spear2.ID))
-			Expect(spearLevel2FromRepo.AttackEffect.ToHitBonus).To(Equal(spear2.AttackEffect.ToHitBonus))
-		})
-		It("Returns nil if power does not exist", func() {
-			nonExistentPower := repo.GetPowerByID("Nope")
-			Expect(nonExistentPower).To(BeNil())
-		})
-		It("Get all of the powers in repo by name", func() {
-			allSpearPowers := repo.GetAllPowersByName("Spear")
-			Expect(len(allSpearPowers)).To(Equal(2))
-			Expect(allSpearPowers).To(ContainElements([]*power.Power{spear, spear2}))
-		})
-	})
-	Context("Load Power using JSON sources", func() {
-		It("Can create powers from JSON", func() {
-			Expect(repo.GetNumberOfPowers()).To(Equal(0))
-			jsonByteStream := []byte(`[{
+	newPowers := []*power.Power{suite.spear, suite.spear2}
+
+	suite.repo = power.NewPowerRepository()
+	suite.repo.AddSlicePowerSource(newPowers)
+}
+
+func (suite *PowerCreationSuite) TestAddPowersToNewRepository(checker *C) {
+	newRepo := power.NewPowerRepository()
+	checker.Assert(newRepo.GetNumberOfPowers(), Equals, 0)
+	spear := power.NewPower("Spear")
+	spear.PowerType = power.Physical
+	newPowers := []*power.Power{spear}
+	success, _ := newRepo.AddSlicePowerSource(newPowers)
+	checker.Assert(success, Equals, true)
+	checker.Assert(newRepo.GetNumberOfPowers(), Equals, 1)
+}
+
+func (suite *PowerCreationSuite) TestUsesIDToRetrievePowers(checker *C) {
+	checker.Assert(suite.repo.GetNumberOfPowers(), Equals, 2)
+
+	spearLevel1FromRepo := suite.repo.GetPowerByID(suite.spear.ID)
+	checker.Assert(spearLevel1FromRepo.Name, Equals, "Spear")
+	checker.Assert(spearLevel1FromRepo.ID, Equals, suite.spear.ID)
+	checker.Assert(spearLevel1FromRepo.AttackEffect.ToHitBonus, Equals, suite.spear.AttackEffect.ToHitBonus)
+
+	spearLevel2FromRepo := suite.repo.GetPowerByID(suite.spear2.ID)
+	checker.Assert(spearLevel2FromRepo.Name, Equals, "Spear")
+	checker.Assert(spearLevel2FromRepo.ID, Equals, suite.spear2.ID)
+	checker.Assert(spearLevel2FromRepo.AttackEffect.ToHitBonus, Equals, suite.spear2.AttackEffect.ToHitBonus)
+}
+
+func (suite *PowerCreationSuite) TestReturnNilIfIDDoesNotExist(checker *C) {
+	nonExistentPower := suite.repo.GetPowerByID("Nope")
+	checker.Assert(nonExistentPower, IsNil)
+}
+
+func (suite *PowerCreationSuite) TestSearchForPowerByName(checker *C) {
+	allSpearPowers := suite.repo.GetAllPowersByName("Spear")
+	checker.Assert(allSpearPowers, HasLen, 2)
+	checker.Assert(allSpearPowers, DeepEquals, []*power.Power{suite.spear, suite.spear2})
+}
+
+func (suite *PowerCreationSuite) TestLoadPowersWithJSON(checker *C) {
+	jsonByteStream := []byte(`[{
 					"name": "Scimitar",
 					"id": "deadbeef",
 					"damage_bonus": 2,
@@ -82,32 +83,13 @@ var _ = Describe("CRUD Powers", func() {
 						"counter_attack_penalty": -2
 					}
 				}]`)
-			success, _ := repo.AddJSONSource(jsonByteStream)
-			Expect(success).To(BeTrue())
-			Expect(repo.GetNumberOfPowers()).To(Equal(1))
-		})
-		It("Can get a Power by name", func() {
-			jsonByteStream := []byte(`[{
-				"name": "Scimitar",
-				"id": "deadbeef",
-				"power_type": "Physical",
-				"attack_effect": {
-					"damage_bonus": 2
-				}
-			}]`)
-			success, _ := repo.AddJSONSource(jsonByteStream)
-			Expect(success).To(BeTrue())
-
-			scimitar := repo.GetPowerByID("deadbeef")
-			Expect(scimitar.Name).To(Equal("Scimitar"))
-			Expect(scimitar.ID).To(Equal("deadbeef"))
-			Expect(scimitar.AttackEffect.DamageBonus).To(Equal(2))
-
-			missingno := repo.GetPowerByID(("Does not exist"))
-			Expect(missingno).To(BeNil())
-		})
-		It("Stops loading Powers upon validating the first invalid Power", func() {
-			jsonByteStream := []byte(`[{
+	newRepo := power.NewPowerRepository()
+	success, _ := newRepo.AddJSONSource(jsonByteStream)
+	checker.Assert(success, Equals, true)
+	checker.Assert(newRepo.GetNumberOfPowers(), Equals, 1)
+}
+func (suite *PowerCreationSuite) TestStopsLoadingUponFirstInvalidPower(checker *C) {
+	jsonByteStream := []byte(`[{
 				"name": "Scimitar",
 				"id": "deadbeef",
 				"power_type": "Physical"
@@ -116,16 +98,12 @@ var _ = Describe("CRUD Powers", func() {
 				"id": "deadbeee",
 				"power_type": "mystery"
 			}]`)
-			success, err := repo.AddJSONSource(jsonByteStream)
-			Expect(success).To(BeFalse())
-			Expect(err).NotTo(BeNil())
-			Expect(err.Error()).To(Equal("AttackingPower 'Scimitar2' has unknown power_type: 'mystery'"))
-		})
-	})
-	Context("Load Power using YAML sources", func() {
-		It("Can create a AttackingPower using YAML", func() {
-			Expect(repo.GetNumberOfPowers()).To(Equal(0))
-			yamlByteStream := []byte(`-
+	success, err := suite.repo.AddJSONSource(jsonByteStream)
+	checker.Assert(success, Equals, false)
+	checker.Assert(err, ErrorMatches, "AttackingPower 'Scimitar2' has unknown power_type: 'mystery'")
+}
+func (suite *PowerCreationSuite) TestLoadPowersWithYAML(checker *C) {
+	yamlByteStream := []byte(`-
   name: Scimitar
   id: deadbeef
   power_type: Physical
@@ -134,16 +112,15 @@ var _ = Describe("CRUD Powers", func() {
     can_counter_attack: true
     counter_attack_penalty: -2
 `)
-			success, _ := repo.AddYAMLSource(yamlByteStream)
-			Expect(success).To(BeTrue())
-			Expect(repo.GetNumberOfPowers()).To(Equal(1))
+	newRepo := power.NewPowerRepository()
+	success, _ := newRepo.AddYAMLSource(yamlByteStream)
+	checker.Assert(success, Equals, true)
+	checker.Assert(newRepo.GetNumberOfPowers(), Equals, 1)
 
-			scimitar := repo.GetPowerByID("deadbeef")
-			Expect(scimitar.Name).To(Equal("Scimitar"))
-			Expect(scimitar.ID).To(Equal("deadbeef"))
-			Expect(scimitar.AttackEffect.DamageBonus).To(Equal(2))
-			Expect(scimitar.AttackEffect.CanCounterAttack).To(BeTrue())
-			Expect(scimitar.AttackEffect.CounterAttackToHitPenalty).To(Equal(-2))
-		})
-	})
-})
+	scimitar := newRepo.GetPowerByID("deadbeef")
+	checker.Assert(scimitar.Name, Equals, "Scimitar")
+	checker.Assert(scimitar.ID, Equals, "deadbeef")
+	checker.Assert(scimitar.AttackEffect.DamageBonus, Equals, 2)
+	checker.Assert(scimitar.AttackEffect.CanCounterAttack, Equals, true)
+	checker.Assert(scimitar.AttackEffect.CounterAttackToHitPenalty, Equals, -2)
+}

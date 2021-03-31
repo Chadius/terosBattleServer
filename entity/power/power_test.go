@@ -2,33 +2,31 @@ package power_test
 
 import (
 	"github.com/cserrant/terosBattleServer/entity/power"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	. "gopkg.in/check.v1"
+	"testing"
 )
 
-var _ = Describe("Calculate combination of Attacking Power and Squaddie", func() {
-	It("Calculates the crit chance based on To Hit Bonus", func() {
-		Expect(power.GetChanceToHitBasedOnHitRate(9001)).To(Equal(36))
-		Expect(power.GetChanceToHitBasedOnHitRate(5)).To(Equal(36))
+func Test(t *testing.T) { TestingT(t) }
 
-		Expect(power.GetChanceToHitBasedOnHitRate(-6)).To(Equal(0))
-		Expect(power.GetChanceToHitBasedOnHitRate(-9001)).To(Equal(0))
+type PowerChanceCheckSuite struct{}
 
-		Expect(power.GetChanceToHitBasedOnHitRate(4)).To(Equal(35))
-		Expect(power.GetChanceToHitBasedOnHitRate(3)).To(Equal(33))
-		Expect(power.GetChanceToHitBasedOnHitRate(2)).To(Equal(30))
-		Expect(power.GetChanceToHitBasedOnHitRate(1)).To(Equal(26))
-		Expect(power.GetChanceToHitBasedOnHitRate(0)).To(Equal(21))
-		Expect(power.GetChanceToHitBasedOnHitRate(-1)).To(Equal(15))
-		Expect(power.GetChanceToHitBasedOnHitRate(-2)).To(Equal(10))
-		Expect(power.GetChanceToHitBasedOnHitRate(-3)).To(Equal(6))
-		Expect(power.GetChanceToHitBasedOnHitRate(-4)).To(Equal(3))
-		Expect(power.GetChanceToHitBasedOnHitRate(-5)).To(Equal(1))
-	})
+var _ = Suite(&PowerChanceCheckSuite{})
 
-	It("Will get a random ID if none is given", func() {
-		powerWithoutID := power.NewPower("New Attack")
-		Expect(powerWithoutID.ID).NotTo(BeNil())
-		Expect(powerWithoutID.ID).NotTo(Equal(""))
-	})
-})
+func (suite *PowerChanceCheckSuite) TestGetChanceToHitBasedOnHitRate(checker *C) {
+	checker.Assert(power.GetChanceToHitBasedOnHitRate(9001), Equals,36)
+	checker.Assert(power.GetChanceToHitBasedOnHitRate(5), Equals,36)
+
+	checker.Assert(power.GetChanceToHitBasedOnHitRate(-6), Equals,0)
+	checker.Assert(power.GetChanceToHitBasedOnHitRate(-9001), Equals,0)
+
+	checker.Assert(power.GetChanceToHitBasedOnHitRate(4), Equals,35)
+	checker.Assert(power.GetChanceToHitBasedOnHitRate(3), Equals,33)
+	checker.Assert(power.GetChanceToHitBasedOnHitRate(2), Equals,30)
+	checker.Assert(power.GetChanceToHitBasedOnHitRate(1), Equals,26)
+	checker.Assert(power.GetChanceToHitBasedOnHitRate(0), Equals,21)
+	checker.Assert(power.GetChanceToHitBasedOnHitRate(-1), Equals,15)
+	checker.Assert(power.GetChanceToHitBasedOnHitRate(-2), Equals,10)
+	checker.Assert(power.GetChanceToHitBasedOnHitRate(-3), Equals,6)
+	checker.Assert(power.GetChanceToHitBasedOnHitRate(-4), Equals,3)
+	checker.Assert(power.GetChanceToHitBasedOnHitRate(-5), Equals,1)
+}

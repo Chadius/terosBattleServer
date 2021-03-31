@@ -8,23 +8,21 @@ import (
 	"testing"
 )
 
-var (
+func Test(t *testing.T) { TestingT(t) }
+
+type LevelUpBenefitRepositorySuite struct{
 	levelRepo *levelupbenefit.Repository
 	jsonByteStream []byte
 	yamlByteStream []byte
 	mageClass *squaddieclass.Class
 	lotsOfSmallLevels []*levelupbenefit.LevelUpBenefit
 	lotsOfBigLevels []*levelupbenefit.LevelUpBenefit
-)
-
-func Test(t *testing.T) { TestingT(t) }
-
-type LevelUpBenefitRepositorySuite struct{}
+}
 
 var _ = Suite(&LevelUpBenefitRepositorySuite{})
 
-func (s *LevelUpBenefitRepositorySuite) SetUpTest(c *C) {
-	jsonByteStream = []byte(`[
+func (suite *LevelUpBenefitRepositorySuite) SetUpTest(c *C) {
+	suite.jsonByteStream = []byte(`[
           {
             "id":"abcdefg0",
             "level_up_benefit_type": "small",
@@ -51,47 +49,38 @@ func (s *LevelUpBenefitRepositorySuite) SetUpTest(c *C) {
       }
 ]`)
 
-	mageClass = &squaddieclass.Class{
+	suite.mageClass = &squaddieclass.Class{
 		ID:                "class1",
 		Name:              "Mage",
 		BaseClassRequired: false,
 	}
 
-	lotsOfSmallLevels = (&testutility.LevelGenerator{
+	suite.lotsOfSmallLevels = (&testutility.LevelGenerator{
 		Instructions: &testutility.LevelGeneratorInstruction{
 			NumberOfLevels: 11,
-			ClassID:        mageClass.ID,
+			ClassID:        suite.mageClass.ID,
 			PrefixLevelID:  "lotsLevelsSmall",
 			Type:           levelupbenefit.Small,
 		},
 	}).Build()
 
-	lotsOfBigLevels = (&testutility.LevelGenerator{
+	suite.lotsOfBigLevels = (&testutility.LevelGenerator{
 		Instructions: &testutility.LevelGeneratorInstruction{
 			NumberOfLevels: 4,
-			ClassID:        mageClass.ID,
+			ClassID:        suite.mageClass.ID,
 			PrefixLevelID:  "lotsLevelsBig",
 			Type:           levelupbenefit.Big,
 		},
 	}).Build()
 
-	levelRepo = levelupbenefit.NewLevelUpBenefitRepository()
-	levelRepo.AddLevels(lotsOfSmallLevels)
-	levelRepo.AddLevels(lotsOfBigLevels)
+	suite.levelRepo = levelupbenefit.NewLevelUpBenefitRepository()
+	suite.levelRepo.AddLevels(suite.lotsOfSmallLevels)
+	suite.levelRepo.AddLevels(suite.lotsOfBigLevels)
 }
 
-func (s *LevelUpBenefitRepositorySuite) TearDownTest(c *C) {
-	levelRepo = nil
-	jsonByteStream = []byte(``)
-	yamlByteStream = []byte(``)
-	mageClass = nil
-	lotsOfSmallLevels = []*levelupbenefit.LevelUpBenefit{}
-	lotsOfBigLevels = []*levelupbenefit.LevelUpBenefit{}
-}
-
-func (s *LevelUpBenefitRepositorySuite) TestCreateLevelUpBenefitsFromJSON(checker *C) {
-	levelRepo = levelupbenefit.NewLevelUpBenefitRepository()
-	jsonByteStream = []byte(`[
+func (suite *LevelUpBenefitRepositorySuite) TestCreateLevelUpBenefitsFromJSON(checker *C) {
+	suite.levelRepo = levelupbenefit.NewLevelUpBenefitRepository()
+	suite.jsonByteStream = []byte(`[
           {
             "id":"abcdefg0",
             "level_up_benefit_type": "small",
@@ -117,15 +106,15 @@ func (s *LevelUpBenefitRepositorySuite) TestCreateLevelUpBenefitsFromJSON(checke
             }
       }
 ]`)
-	checker.Assert(levelRepo.GetNumberOfLevelUpBenefits(), Equals, 0)
-	success, _ := levelRepo.AddJSONSource(jsonByteStream)
+	checker.Assert(suite.levelRepo.GetNumberOfLevelUpBenefits(), Equals, 0)
+	success, _ := suite.levelRepo.AddJSONSource(suite.jsonByteStream)
 	checker.Assert(success, Equals, true)
-	checker.Assert(levelRepo.GetNumberOfLevelUpBenefits(), Equals, 1)
+	checker.Assert(suite.levelRepo.GetNumberOfLevelUpBenefits(), Equals, 1)
 }
 
-func (s *LevelUpBenefitRepositorySuite) TestCreateLevelUpBenefitsFromYAML(checker *C) {
-	levelRepo = levelupbenefit.NewLevelUpBenefitRepository()
-	yamlByteStream = []byte(
+func (suite *LevelUpBenefitRepositorySuite) TestCreateLevelUpBenefitsFromYAML(checker *C) {
+	suite.levelRepo = levelupbenefit.NewLevelUpBenefitRepository()
+	suite.yamlByteStream = []byte(
 		`
 - id: abcdefg0
   class_id: class0
@@ -146,16 +135,16 @@ func (s *LevelUpBenefitRepositorySuite) TestCreateLevelUpBenefitsFromYAML(checke
     type: teleport
     hit_and_run": true
 `)
-	checker.Assert(levelRepo.GetNumberOfLevelUpBenefits(), Equals, 0)
-	success, _ := levelRepo.AddYAMLSource(yamlByteStream)
+	checker.Assert(suite.levelRepo.GetNumberOfLevelUpBenefits(), Equals, 0)
+	success, _ := suite.levelRepo.AddYAMLSource(suite.yamlByteStream)
 	checker.Assert(success, Equals, true)
-	checker.Assert(levelRepo.GetNumberOfLevelUpBenefits(), Equals, 1)
+	checker.Assert(suite.levelRepo.GetNumberOfLevelUpBenefits(), Equals, 1)
 }
 
-func (s *LevelUpBenefitRepositorySuite) TestCreateLevelUpBenefitsFromASlice(checker *C) {
-	levelRepo = levelupbenefit.NewLevelUpBenefitRepository()
-	checker.Assert(levelRepo.GetNumberOfLevelUpBenefits(), Equals, 0)
-	success, _ := levelRepo.AddLevels([]*levelupbenefit.LevelUpBenefit{
+func (suite *LevelUpBenefitRepositorySuite) TestCreateLevelUpBenefitsFromASlice(checker *C) {
+	suite.levelRepo = levelupbenefit.NewLevelUpBenefitRepository()
+	checker.Assert(suite.levelRepo.GetNumberOfLevelUpBenefits(), Equals, 0)
+	success, _ := suite.levelRepo.AddLevels([]*levelupbenefit.LevelUpBenefit{
 		{
 			LevelUpBenefitType: levelupbenefit.Small,
 			ClassID:            "class0",
@@ -168,11 +157,11 @@ func (s *LevelUpBenefitRepositorySuite) TestCreateLevelUpBenefitsFromASlice(chec
 		},
 	})
 	checker.Assert(success, Equals, true)
-	checker.Assert(levelRepo.GetNumberOfLevelUpBenefits(), Equals, 2)
+	checker.Assert(suite.levelRepo.GetNumberOfLevelUpBenefits(), Equals, 2)
 }
 
-func (s *LevelUpBenefitRepositorySuite) TestStopLoadingOnFirstInvalidLevelUpBenefit(checker *C) {
-	levelRepo = levelupbenefit.NewLevelUpBenefitRepository()
+func (suite *LevelUpBenefitRepositorySuite) TestStopLoadingOnFirstInvalidLevelUpBenefit(checker *C) {
+	suite.levelRepo = levelupbenefit.NewLevelUpBenefitRepository()
 	byteStream := []byte(`[
           {
             "id":"abcdefg0",
@@ -207,13 +196,13 @@ func (s *LevelUpBenefitRepositorySuite) TestStopLoadingOnFirstInvalidLevelUpBene
 				"powers": [{"name": "Scimitar", "id": "deadbeef"}]
           }
 ]`)
-	success, err := levelRepo.AddJSONSource(byteStream)
+	success, err := suite.levelRepo.AddJSONSource(byteStream)
 	checker.Assert(success, Equals, false)
 	checker.Assert(err.Error(), Equals, `unknown level up benefit type: "unknown"`)
 }
 
-func (s *LevelUpBenefitRepositorySuite) TestCanSearchLevelUpBenefits(checker *C) {
-	jsonByteStream = []byte(`[
+func (suite *LevelUpBenefitRepositorySuite) TestCanSearchLevelUpBenefits(checker *C) {
+	suite.jsonByteStream = []byte(`[
          {
            "id":"abcdefg0",
            "level_up_benefit_type": "small",
@@ -239,11 +228,11 @@ func (s *LevelUpBenefitRepositorySuite) TestCanSearchLevelUpBenefits(checker *C)
            }
      }
 ]`)
-	levelRepo = levelupbenefit.NewLevelUpBenefitRepository()
-	success, _ := levelRepo.AddJSONSource(jsonByteStream)
+	suite.levelRepo = levelupbenefit.NewLevelUpBenefitRepository()
+	success, _ := suite.levelRepo.AddJSONSource(suite.jsonByteStream)
 	checker.Assert(success, Equals, true)
 
-	benefits, err := levelRepo.GetLevelUpBenefitsByClassID("class0")
+	benefits, err := suite.levelRepo.GetLevelUpBenefitsByClassID("class0")
 	checker.Assert(err, IsNil)
 	checker.Assert(benefits, HasLen, 1)
 
@@ -264,8 +253,8 @@ func (s *LevelUpBenefitRepositorySuite) TestCanSearchLevelUpBenefits(checker *C)
 	checker.Assert(firstBenefit.PowerIDGained[0].ID, Equals, "deadbeef")
 }
 
-func (s *LevelUpBenefitRepositorySuite) TestRaisesAnErrorWithNonexistentClassID(checker *C) {
-	jsonByteStream = []byte(`[
+func (suite *LevelUpBenefitRepositorySuite) TestRaisesAnErrorWithNonexistentClassID(checker *C) {
+	suite.jsonByteStream = []byte(`[
           {
             "id":"abcdefg0",
             "level_up_benefit_type": "small",
@@ -291,22 +280,22 @@ func (s *LevelUpBenefitRepositorySuite) TestRaisesAnErrorWithNonexistentClassID(
             }
       }
 ]`)
-	levelRepo.AddJSONSource(jsonByteStream)
+	suite.levelRepo.AddJSONSource(suite.jsonByteStream)
 
-	benefits, err := levelRepo.GetLevelUpBenefitsByClassID("Class not found")
+	benefits, err := suite.levelRepo.GetLevelUpBenefitsByClassID("Class not found")
 	checker.Assert(err, ErrorMatches, `no LevelUpBenefits for this class ID: "Class not found"`)
 	checker.Assert(benefits, HasLen, 0)
 }
 
-func (s *LevelUpBenefitRepositorySuite) TestGetBigAndSmallLevelsForAGivenClass(checker *C) {
-	levelsByBenefitType, err := levelRepo.GetLevelUpBenefitsForClassByType(mageClass.ID)
+func (suite *LevelUpBenefitRepositorySuite) TestGetBigAndSmallLevelsForAGivenClass(checker *C) {
+	levelsByBenefitType, err := suite.levelRepo.GetLevelUpBenefitsForClassByType(suite.mageClass.ID)
 	checker.Assert(err, IsNil)
 	checker.Assert(levelsByBenefitType[levelupbenefit.Small], HasLen, 11)
 	checker.Assert(levelsByBenefitType[levelupbenefit.Big], HasLen, 4)
 }
 
-func (s *LevelUpBenefitRepositorySuite) TestRaiseErrorIfClassDoesNotExist(checker *C) {
-	jsonByteStream = []byte(`[
+func (suite *LevelUpBenefitRepositorySuite) TestRaiseErrorIfClassDoesNotExist(checker *C) {
+	suite.jsonByteStream = []byte(`[
           {
             "id":"abcdefg0",
             "level_up_benefit_type": "small",
@@ -332,8 +321,8 @@ func (s *LevelUpBenefitRepositorySuite) TestRaiseErrorIfClassDoesNotExist(checke
             }
       }
 ]`)
-	levelRepo.AddJSONSource(jsonByteStream)
-	levelsByBenefitType, err := levelRepo.GetLevelUpBenefitsForClassByType("bad ID")
+	suite.levelRepo.AddJSONSource(suite.jsonByteStream)
+	levelsByBenefitType, err := suite.levelRepo.GetLevelUpBenefitsForClassByType("bad ID")
 	checker.Assert(err, ErrorMatches, `no LevelUpBenefits for this class ID: "bad ID"`)
 	checker.Assert(levelsByBenefitType[levelupbenefit.Small], HasLen, 0)
 	checker.Assert(levelsByBenefitType[levelupbenefit.Big], HasLen, 0)
