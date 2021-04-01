@@ -6,199 +6,202 @@ import (
 	"github.com/cserrant/terosBattleServer/entity/squaddieclass"
 	"github.com/cserrant/terosBattleServer/usecase/levelup"
 	"github.com/cserrant/terosBattleServer/utility/testutility"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	. "gopkg.in/check.v1"
 )
 
-var _ = Describe("Squaddie choosing and gaining levels", func() {
-	Context("Squaddie knows about big and small level ups", func() {
-		var (
-			teros *squaddie.Squaddie
-			mageClass *squaddieclass.Class
-			onlySmallLevelsClass *squaddieclass.Class
-			classWithInitialLevel *squaddieclass.Class
-			lotsOfSmallLevels []*levelupbenefit.LevelUpBenefit
-			lotsOfBigLevels []*levelupbenefit.LevelUpBenefit
-			classRepo *squaddieclass.Repository
-			levelRepo *levelupbenefit.Repository
-		)
-		BeforeEach(func() {
-			mageClass = &squaddieclass.Class{
-				ID:                "class0",
-				Name:              "Mage",
-				BaseClassRequired: false,
-			}
+type SquaddieChoosesLevelsSuite struct {
+	teros *squaddie.Squaddie
+	mageClass *squaddieclass.Class
+	onlySmallLevelsClass *squaddieclass.Class
+	classWithInitialLevel *squaddieclass.Class
+	lotsOfSmallLevels []*levelupbenefit.LevelUpBenefit
+	lotsOfBigLevels []*levelupbenefit.LevelUpBenefit
+	classRepo *squaddieclass.Repository
+	levelRepo *levelupbenefit.Repository
+}
 
-			onlySmallLevelsClass = &squaddieclass.Class{
-				ID:                "class1",
-				Name:              "SmallLevels",
-				BaseClassRequired: false,
-			}
+var _ = Suite(&SquaddieChoosesLevelsSuite{})
 
-			classWithInitialLevel = &squaddieclass.Class{
-				ID:                "classWithInitialLevel",
-				Name:              "Class wants big level first",
-				BaseClassRequired: false,
-				InitialBigLevelID: "classWithInitialLevelThisIsTakenFirst",
-			}
+func (suite *SquaddieChoosesLevelsSuite) SetUpTest(checker *C) {
+	suite.mageClass = &squaddieclass.Class{
+		ID:                "class0",
+		Name:              "Mage",
+		BaseClassRequired: false,
+	}
 
-			classRepo = squaddieclass.NewRepository()
-			classRepo.AddListOfClasses([]*squaddieclass.Class{mageClass, onlySmallLevelsClass, classWithInitialLevel})
+	suite.onlySmallLevelsClass = &squaddieclass.Class{
+		ID:                "class1",
+		Name:              "SmallLevels",
+		BaseClassRequired: false,
+	}
 
-			lotsOfSmallLevels = (&testutility.LevelGenerator{
-				Instructions: &testutility.LevelGeneratorInstruction{
-					NumberOfLevels: 10,
-					ClassID:        mageClass.ID,
-					PrefixLevelID:  "lotsLevelsSmall",
-					Type:           levelupbenefit.Small,
-				},
-			}).Build()
+	suite.classWithInitialLevel = &squaddieclass.Class{
+		ID:                "suite.classWithInitialLevel",
+		Name:              "Class wants big level first",
+		BaseClassRequired: false,
+		InitialBigLevelID: "suite.classWithInitialLevelThisIsTakenFirst",
+	}
 
-			lotsOfBigLevels = (&testutility.LevelGenerator{
-				Instructions: &testutility.LevelGeneratorInstruction{
-					NumberOfLevels: 4,
-					ClassID:        mageClass.ID,
-					PrefixLevelID:  "lotsLevelsBig",
-					Type:           levelupbenefit.Big,
-				},
-			}).Build()
+	suite.classRepo = squaddieclass.NewRepository()
+	suite.classRepo.AddListOfClasses([]*squaddieclass.Class{suite.mageClass, suite.onlySmallLevelsClass, suite.classWithInitialLevel})
 
-			levelRepo = levelupbenefit.NewLevelUpBenefitRepository()
-			levelRepo.AddLevels(lotsOfSmallLevels)
-			levelRepo.AddLevels(lotsOfBigLevels)
-			levelRepo.AddLevels((&testutility.LevelGenerator{
-				Instructions: &testutility.LevelGeneratorInstruction{
-					NumberOfLevels: 2,
-					ClassID:        onlySmallLevelsClass.ID,
-					PrefixLevelID:  "smallLevel",
-					Type:           levelupbenefit.Small,
-				},
-			}).Build())
+	suite.lotsOfSmallLevels = (&testutility.LevelGenerator{
+		Instructions: &testutility.LevelGeneratorInstruction{
+			NumberOfLevels: 10,
+			ClassID:        suite.mageClass.ID,
+			PrefixLevelID:  "lotsLevelsSmall",
+			Type:           levelupbenefit.Small,
+		},
+	}).Build()
 
-			levelRepo.AddLevels([]*levelupbenefit.LevelUpBenefit{
-				{
-					LevelUpBenefitType: levelupbenefit.Small,
-					ClassID:            classWithInitialLevel.ID,
-					ID:                 "classWithInitialLevel0",
-				},
-				{
-					LevelUpBenefitType: levelupbenefit.Small,
-					ClassID:            classWithInitialLevel.ID,
-					ID:                 "classWithInitialLevel1",
-				},
-				{
-					LevelUpBenefitType: levelupbenefit.Small,
-					ClassID:            classWithInitialLevel.ID,
-					ID:                 "classWithInitialLevel2",
-				},
-				{
-					LevelUpBenefitType: levelupbenefit.Big,
-					ClassID:            classWithInitialLevel.ID,
-					ID:                 "classWithInitialLevelThisIsTakenFirst",
-				},
-				{
-					LevelUpBenefitType: levelupbenefit.Big,
-					ClassID:            classWithInitialLevel.ID,
-					ID:                 "classWithInitialLevelThisShouldNotBeTakenFirst",
-				},
-			})
+	suite.lotsOfBigLevels = (&testutility.LevelGenerator{
+		Instructions: &testutility.LevelGeneratorInstruction{
+			NumberOfLevels: 4,
+			ClassID:        suite.mageClass.ID,
+			PrefixLevelID:  "lotsLevelsBig",
+			Type:           levelupbenefit.Big,
+		},
+	}).Build()
 
-			teros = squaddie.NewSquaddie("Teros")
-			teros.AddClass(mageClass)
-		})
-		It("Only considers small levels when calculating its class level", func() {
-			teros.AddClass(mageClass)
-			for index, _ := range [5]int{} {
-				levelup.ImproveSquaddie(lotsOfSmallLevels[index], teros, nil)
-			}
+	suite.levelRepo = levelupbenefit.NewLevelUpBenefitRepository()
+	suite.levelRepo.AddLevels(suite.lotsOfSmallLevels)
+	suite.levelRepo.AddLevels(suite.lotsOfBigLevels)
+	suite.levelRepo.AddLevels((&testutility.LevelGenerator{
+		Instructions: &testutility.LevelGeneratorInstruction{
+			NumberOfLevels: 2,
+			ClassID:        suite.onlySmallLevelsClass.ID,
+			PrefixLevelID:  "smallLevel",
+			Type:           levelupbenefit.Small,
+		},
+	}).Build())
 
-			levelup.ImproveSquaddie(lotsOfBigLevels[0], teros, nil)
-			levelup.ImproveSquaddie(lotsOfBigLevels[1], teros, nil)
+	suite.levelRepo.AddLevels([]*levelupbenefit.LevelUpBenefit{
+		{
+			LevelUpBenefitType: levelupbenefit.Small,
+			ClassID:            suite.classWithInitialLevel.ID,
+			ID:                 "suite.classWithInitialLevel0",
+		},
+		{
+			LevelUpBenefitType: levelupbenefit.Small,
+			ClassID:            suite.classWithInitialLevel.ID,
+			ID:                 "suite.classWithInitialLevel1",
+		},
+		{
+			LevelUpBenefitType: levelupbenefit.Small,
+			ClassID:            suite.classWithInitialLevel.ID,
+			ID:                 "suite.classWithInitialLevel2",
+		},
+		{
+			LevelUpBenefitType: levelupbenefit.Big,
+			ClassID:            suite.classWithInitialLevel.ID,
+			ID:                 "suite.classWithInitialLevelThisIsTakenFirst",
+		},
+		{
+			LevelUpBenefitType: levelupbenefit.Big,
+			ClassID:            suite.classWithInitialLevel.ID,
+			ID:                 "suite.classWithInitialLevelThisShouldNotBeTakenFirst",
+		},
+	})
 
-			classLevels := levelup.GetSquaddieClassLevels(teros, levelRepo)
-			Expect(classLevels[mageClass.ID]).To(Equal(5))
-		})
-		Context("Choosing levels when leveling up a squaddie", func() {
-			It("gets one small and one big level if the squaddie has an odd class level", func() {
-				teros.AddClass(mageClass)
-				teros.SetClass(mageClass.ID)
-				err := levelup.ImproveSquaddieBasedOnLevel(teros, lotsOfBigLevels[0].ID, levelRepo, classRepo, nil)
-				Expect(err).To(BeNil())
+	suite.teros = squaddie.NewSquaddie("suite.teros")
+	suite.teros.AddClass(suite.mageClass)
+}
 
-				classLevels := levelup.GetSquaddieClassLevels(teros, levelRepo)
-				Expect(classLevels[mageClass.ID]).To(Equal(1))
-				Expect(teros.ClassLevelsConsumed[mageClass.ID].LevelsConsumed).To(HaveLen(2))
+func (suite *SquaddieChoosesLevelsSuite) TestUseSmallLevelsForClassLevel(checker *C) {
+	suite.teros.AddClass(suite.mageClass)
+	for index, _ := range [5]int{} {
+		levelup.ImproveSquaddie(suite.lotsOfSmallLevels[index], suite.teros, nil)
+	}
 
-				hasSmallLevel := teros.ClassLevelsConsumed[mageClass.ID].AnyLevelsConsumed(func(consumedLevelID string) bool {
-					return levelupbenefit.AnyLevelUpBenefits(lotsOfSmallLevels, func(level *levelupbenefit.LevelUpBenefit) bool {
-						return level.ID == consumedLevelID
-					})
-				})
-				Expect(hasSmallLevel).To(BeTrue())
+	levelup.ImproveSquaddie(suite.lotsOfBigLevels[0], suite.teros, nil)
+	levelup.ImproveSquaddie(suite.lotsOfBigLevels[1], suite.teros, nil)
 
-				hasBigLevel := teros.ClassLevelsConsumed[mageClass.ID].AnyLevelsConsumed(func(consumedLevelID string) bool {
-					return levelupbenefit.AnyLevelUpBenefits(lotsOfBigLevels, func(level *levelupbenefit.LevelUpBenefit) bool {
-						return level.ID == consumedLevelID
-					})
-				})
-				Expect(hasBigLevel).To(BeTrue())
-			})
-			It("raises an error if the class cannot be found", func() {
-				err := levelup.ImproveSquaddieBasedOnLevel(teros, lotsOfBigLevels[0].ID, levelRepo, classRepo, nil)
-				Expect(err.Error()).To(Equal(`class repository: No class found with ID: ""`))
-			})
-			It("does not add big levels if there are none available", func() {
-				teros.AddClass(onlySmallLevelsClass)
-				teros.SetClass(onlySmallLevelsClass.ID)
-				err := levelup.ImproveSquaddieBasedOnLevel(teros, lotsOfBigLevels[0].ID, levelRepo, classRepo, nil)
-				Expect(err).To(BeNil())
+	classLevels := levelup.GetSquaddieClassLevels(suite.teros, suite.levelRepo)
+	checker.Assert(classLevels[suite.mageClass.ID], Equals, 5)
+}
 
-				classLevels := levelup.GetSquaddieClassLevels(teros, levelRepo)
-				Expect(classLevels[onlySmallLevelsClass.ID]).To(Equal(1))
-				Expect(teros.ClassLevelsConsumed[onlySmallLevelsClass.ID].LevelsConsumed).To(HaveLen(1))
-			})
-			It("chooses any small level at most once", func() {
-				teros.AddClass(onlySmallLevelsClass)
-				teros.SetClass(onlySmallLevelsClass.ID)
-				levelup.ImproveSquaddieBasedOnLevel(teros, "", levelRepo, classRepo, nil)
+func (suite *SquaddieChoosesLevelsSuite) TestOddClassLevelEarnsBigAndSmallLevel(checker *C) {
+	suite.teros.AddClass(suite.mageClass)
+	suite.teros.SetClass(suite.mageClass.ID)
+	err := levelup.ImproveSquaddieBasedOnLevel(suite.teros, suite.lotsOfBigLevels[0].ID, suite.levelRepo, suite.classRepo, nil)
+	checker.Assert(err, IsNil)
 
-				err := levelup.ImproveSquaddieBasedOnLevel(teros, "", levelRepo, classRepo, nil)
-				Expect(err).To(BeNil())
-				classLevels := levelup.GetSquaddieClassLevels(teros, levelRepo)
-				Expect(classLevels[onlySmallLevelsClass.ID]).To(Equal(2))
-				Expect(teros.ClassLevelsConsumed[onlySmallLevelsClass.ID].LevelsConsumed).To(HaveLen(2))
-			})
-			It("does not add small levels if there are none available", func() {
-				teros.AddClass(onlySmallLevelsClass)
-				teros.SetClass(onlySmallLevelsClass.ID)
-				levelup.ImproveSquaddieBasedOnLevel(teros, "", levelRepo, classRepo, nil)
-				levelup.ImproveSquaddieBasedOnLevel(teros, "", levelRepo, classRepo, nil)
-				err := levelup.ImproveSquaddieBasedOnLevel(teros, "", levelRepo, classRepo, nil)
-				Expect(err).To(BeNil())
+	classLevels := levelup.GetSquaddieClassLevels(suite.teros, suite.levelRepo)
+	checker.Assert(classLevels[suite.mageClass.ID], Equals, 1)
+	checker.Assert(suite.teros.ClassLevelsConsumed[suite.mageClass.ID].LevelsConsumed, HasLen, 2)
 
-				classLevels := levelup.GetSquaddieClassLevels(teros, levelRepo)
-				Expect(classLevels[onlySmallLevelsClass.ID]).To(Equal(2))
-				Expect(teros.ClassLevelsConsumed[onlySmallLevelsClass.ID].LevelsConsumed).To(HaveLen(2))
-			})
-			It("squaddie must choose initial level first if it exists", func() {
-				teros.AddClass(classWithInitialLevel)
-				teros.SetClass(classWithInitialLevel.ID)
-				err := levelup.ImproveSquaddieBasedOnLevel(teros, "classWithInitialLevelThisShouldNotBeTakenFirst", levelRepo, classRepo, nil)
-				Expect(err).To(BeNil())
-
-				classLevels := levelup.GetSquaddieClassLevels(teros, levelRepo)
-				Expect(classLevels[classWithInitialLevel.ID]).To(Equal(1))
-				Expect(teros.ClassLevelsConsumed[classWithInitialLevel.ID].LevelsConsumed).To(HaveLen(2))
-				Expect(teros.ClassLevelsConsumed[classWithInitialLevel.ID].IsLevelAlreadyConsumed("classWithInitialLevelThisIsTakenFirst")).To(BeTrue())
-				Expect(teros.ClassLevelsConsumed[classWithInitialLevel.ID].IsLevelAlreadyConsumed("classWithInitialLevelThisShouldNotBeTakenFirst")).To(BeFalse())
-
-				levelup.ImproveSquaddieBasedOnLevel(teros, "classWithInitialLevelThisShouldNotBeTakenFirst", levelRepo, classRepo, nil)
-				Expect(teros.ClassLevelsConsumed[classWithInitialLevel.ID].LevelsConsumed).To(HaveLen(3))
-
-				levelup.ImproveSquaddieBasedOnLevel(teros, "classWithInitialLevelThisShouldNotBeTakenFirst", levelRepo, classRepo, nil)
-				Expect(teros.ClassLevelsConsumed[classWithInitialLevel.ID].LevelsConsumed).To(HaveLen(5))
-				Expect(teros.ClassLevelsConsumed[classWithInitialLevel.ID].IsLevelAlreadyConsumed("classWithInitialLevelThisShouldNotBeTakenFirst")).To(BeTrue())
-			})
+	hasSmallLevel := suite.teros.ClassLevelsConsumed[suite.mageClass.ID].AnyLevelsConsumed(func(consumedLevelID string) bool {
+		return levelupbenefit.AnyLevelUpBenefits(suite.lotsOfSmallLevels, func(level *levelupbenefit.LevelUpBenefit) bool {
+			return level.ID == consumedLevelID
 		})
 	})
-})
+	checker.Assert(hasSmallLevel, Equals, true)
+
+	hasBigLevel := suite.teros.ClassLevelsConsumed[suite.mageClass.ID].AnyLevelsConsumed(func(consumedLevelID string) bool {
+		return levelupbenefit.AnyLevelUpBenefits(suite.lotsOfBigLevels, func(level *levelupbenefit.LevelUpBenefit) bool {
+			return level.ID == consumedLevelID
+		})
+	})
+	checker.Assert(hasBigLevel, Equals, true)
+}
+
+func (suite *SquaddieChoosesLevelsSuite) TestRaisesAnErrorIfClassIsNotFound(checker *C) {
+	err := levelup.ImproveSquaddieBasedOnLevel(suite.teros, suite.lotsOfBigLevels[0].ID, suite.levelRepo, suite.classRepo, nil)
+	checker.Assert(err, ErrorMatches, `class repository: No class found with ID: ""`)
+}
+
+func (suite *SquaddieChoosesLevelsSuite) TestDoesNotChooseBigLevelIfNoneAvailable(checker *C) {
+	suite.teros.AddClass(suite.onlySmallLevelsClass)
+	suite.teros.SetClass(suite.onlySmallLevelsClass.ID)
+	err := levelup.ImproveSquaddieBasedOnLevel(suite.teros, suite.lotsOfBigLevels[0].ID, suite.levelRepo, suite.classRepo, nil)
+	checker.Assert(err, IsNil)
+
+	classLevels := levelup.GetSquaddieClassLevels(suite.teros, suite.levelRepo)
+	checker.Assert(classLevels[suite.onlySmallLevelsClass.ID], Equals, 1)
+	checker.Assert(suite.teros.ClassLevelsConsumed[suite.onlySmallLevelsClass.ID].LevelsConsumed, HasLen, 1)
+}
+
+func (suite *SquaddieChoosesLevelsSuite) TestChooseSmallLevelAtMostOnce(checker *C) {
+	suite.teros.AddClass(suite.onlySmallLevelsClass)
+	suite.teros.SetClass(suite.onlySmallLevelsClass.ID)
+	levelup.ImproveSquaddieBasedOnLevel(suite.teros, "", suite.levelRepo, suite.classRepo, nil)
+
+	err := levelup.ImproveSquaddieBasedOnLevel(suite.teros, "", suite.levelRepo, suite.classRepo, nil)
+	checker.Assert(err, IsNil)
+	classLevels := levelup.GetSquaddieClassLevels(suite.teros, suite.levelRepo)
+	checker.Assert(classLevels[suite.onlySmallLevelsClass.ID], Equals, 2)
+	checker.Assert(suite.teros.ClassLevelsConsumed[suite.onlySmallLevelsClass.ID].LevelsConsumed, HasLen, 2)
+}
+
+func (suite *SquaddieChoosesLevelsSuite) TestDoesNotChooseSmallLevelIfNoneAvailable(checker *C) {
+	suite.teros.AddClass(suite.onlySmallLevelsClass)
+	suite.teros.SetClass(suite.onlySmallLevelsClass.ID)
+	levelup.ImproveSquaddieBasedOnLevel(suite.teros, "", suite.levelRepo, suite.classRepo, nil)
+	levelup.ImproveSquaddieBasedOnLevel(suite.teros, "", suite.levelRepo, suite.classRepo, nil)
+	err := levelup.ImproveSquaddieBasedOnLevel(suite.teros, "", suite.levelRepo, suite.classRepo, nil)
+	checker.Assert(err, IsNil)
+
+	classLevels := levelup.GetSquaddieClassLevels(suite.teros, suite.levelRepo)
+	checker.Assert(classLevels[suite.onlySmallLevelsClass.ID], Equals, 2)
+	checker.Assert(suite.teros.ClassLevelsConsumed[suite.onlySmallLevelsClass.ID].LevelsConsumed, HasLen, 2)
+}
+
+func (suite *SquaddieChoosesLevelsSuite) TestSquaddieMustChooseInitialLevel(checker *C) {
+	suite.teros.AddClass(suite.classWithInitialLevel)
+	suite.teros.SetClass(suite.classWithInitialLevel.ID)
+	err := levelup.ImproveSquaddieBasedOnLevel(suite.teros, "suite.classWithInitialLevelThisShouldNotBeTakenFirst", suite.levelRepo, suite.classRepo, nil)
+	checker.Assert(err, IsNil)
+
+	classLevels := levelup.GetSquaddieClassLevels(suite.teros, suite.levelRepo)
+	checker.Assert(classLevels[suite.classWithInitialLevel.ID], Equals, 1)
+	checker.Assert(suite.teros.ClassLevelsConsumed[suite.classWithInitialLevel.ID].LevelsConsumed, HasLen, 2)
+	checker.Assert(suite.teros.ClassLevelsConsumed[suite.classWithInitialLevel.ID].IsLevelAlreadyConsumed("suite.classWithInitialLevelThisIsTakenFirst"), Equals, true)
+	checker.Assert(suite.teros.ClassLevelsConsumed[suite.classWithInitialLevel.ID].IsLevelAlreadyConsumed("suite.classWithInitialLevelThisShouldNotBeTakenFirst"), Equals, false)
+
+	levelup.ImproveSquaddieBasedOnLevel(suite.teros, "suite.classWithInitialLevelThisShouldNotBeTakenFirst", suite.levelRepo, suite.classRepo, nil)
+	checker.Assert(suite.teros.ClassLevelsConsumed[suite.classWithInitialLevel.ID].LevelsConsumed, HasLen, 3)
+
+	levelup.ImproveSquaddieBasedOnLevel(suite.teros, "suite.classWithInitialLevelThisShouldNotBeTakenFirst", suite.levelRepo, suite.classRepo, nil)
+	checker.Assert(suite.teros.ClassLevelsConsumed[suite.classWithInitialLevel.ID].LevelsConsumed, HasLen, 5)
+	checker.Assert(suite.teros.ClassLevelsConsumed[suite.classWithInitialLevel.ID].IsLevelAlreadyConsumed("suite.classWithInitialLevelThisShouldNotBeTakenFirst"), Equals, true)
+}
