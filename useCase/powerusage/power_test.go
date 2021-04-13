@@ -2,6 +2,7 @@ package powerusage_test
 
 import (
 	"github.com/cserrant/terosBattleServer/entity/power"
+	"github.com/cserrant/terosBattleServer/entity/powerusagecontext"
 	"github.com/cserrant/terosBattleServer/entity/squaddie"
 	"github.com/cserrant/terosBattleServer/usecase/powerusage"
 	"github.com/cserrant/terosBattleServer/utility/testutility"
@@ -244,7 +245,7 @@ func (suite *CalculateExpectedDamageFromAttackSuite) TestPhysicalPowerSummary(ch
 	suite.teros.Mind = 2
 	suite.blot.AttackEffect.DamageBonus = 4
 
-	attackingPowerSummary := powerusage.GetExpectedDamage(&powerusage.AttackContext{
+	attackingPowerSummary := powerusage.GetExpectedDamage(nil, &powerusagecontext.AttackContext{
 		Power:           suite.spear,
 		Attacker:        suite.teros,
 		Target:          suite.bandit,
@@ -271,7 +272,7 @@ func (suite *CalculateExpectedDamageFromAttackSuite) TestSummaryWithBarrierBurn(
 	suite.teros.Mind = 2
 	suite.blot.AttackEffect.DamageBonus = 4
 	suite.blot.AttackEffect.ExtraBarrierDamage = 3
-	attackingPowerSummary := powerusage.GetExpectedDamage(&powerusage.AttackContext{
+	attackingPowerSummary := powerusage.GetExpectedDamage(nil, &powerusagecontext.AttackContext{
 		Power:           suite.blot,
 		Attacker:        suite.teros,
 		Target:          suite.bandit,
@@ -298,7 +299,7 @@ func (suite *CalculateExpectedDamageFromAttackSuite) TestChanceToCriticalHitOnTh
 	suite.spear.AttackEffect.DamageBonus = 3
 
 	suite.spear.AttackEffect.CriticalHitThreshold = 4
-	attackingPowerSummary := powerusage.GetExpectedDamage(&powerusage.AttackContext{
+	attackingPowerSummary := powerusage.GetExpectedDamage(nil, &powerusagecontext.AttackContext{
 		Power:           suite.spear,
 		Attacker:        suite.teros,
 		Target:          suite.bandit,
@@ -315,7 +316,7 @@ func (suite *CalculateExpectedDamageFromAttackSuite) TestCriticalHitDoublesDamag
 	suite.bandit.MaxBarrier = 4
 	suite.bandit.CurrentBarrier = 4
 	suite.spear.AttackEffect.CriticalHitThreshold = 4
-	attackingPowerSummary := powerusage.GetExpectedDamage(&powerusage.AttackContext{
+	attackingPowerSummary := powerusage.GetExpectedDamage(nil, &powerusagecontext.AttackContext{
 		Power:           suite.spear,
 		Attacker:        suite.teros,
 		Target:          suite.bandit,
@@ -332,7 +333,7 @@ func (suite *CalculateExpectedDamageFromAttackSuite) TestSummaryIgnoresCriticalI
 	suite.spear.AttackEffect.DamageBonus = 3
 
 	suite.spear.AttackEffect.CriticalHitThreshold = 0
-	attackingPowerSummary := powerusage.GetExpectedDamage(&powerusage.AttackContext{
+	attackingPowerSummary := powerusage.GetExpectedDamage(nil, &powerusagecontext.AttackContext{
 		Power:           suite.spear,
 		Attacker:        suite.teros,
 		Target:          suite.bandit,
@@ -420,6 +421,7 @@ func (suite *CreatePowerReportSuite) TestPowerReportWhenMissed(checker *C) {
 	dieRoller := &testutility.AlwaysMissDieRoller{}
 
 	powerResult := powerusage.UsePowerAgainstSquaddiesAndGetResults(
+		nil,
 		suite.blot,
 		suite.teros,
 		[]*squaddie.Squaddie{
@@ -438,6 +440,7 @@ func (suite *CreatePowerReportSuite) TestPowerReportWhenHitButNoCrit(checker *C)
 	dieRoller := &testutility.AlwaysHitDieRoller{}
 
 	powerResult := powerusage.UsePowerAgainstSquaddiesAndGetResults(
+		nil,
 		suite.blot,
 		suite.teros,
 		[]*squaddie.Squaddie{
@@ -460,6 +463,7 @@ func (suite *CreatePowerReportSuite) TestPowerReportWhenCrits(checker *C) {
 	suite.blot.AttackEffect.CriticalHitThreshold = 900
 
 	powerResult := powerusage.UsePowerAgainstSquaddiesAndGetResults(
+		nil,
 		suite.blot,
 		suite.teros,
 		[]*squaddie.Squaddie{
@@ -481,6 +485,7 @@ func (suite *CreatePowerReportSuite) TestReportPerTarget(checker *C) {
 	dieRoller := &testutility.AlwaysMissDieRoller{}
 
 	powerResult := powerusage.UsePowerAgainstSquaddiesAndGetResults(
+		nil,
 		suite.blot,
 		suite.teros,
 		[]*squaddie.Squaddie{
@@ -547,6 +552,7 @@ func (suite *SquaddieCommitToPowerUsageSuite) TestSquaddiesEquipPowerUponCommit(
 	dieRoller := &testutility.AlwaysMissDieRoller{}
 
 	powerReport := powerusage.UsePowerAgainstSquaddiesAndGetResults(
+		nil,
 		suite.scimitar,
 		suite.teros,
 		[]*squaddie.Squaddie{
@@ -565,6 +571,7 @@ func (suite *SquaddieCommitToPowerUsageSuite) TestSquaddieWillKeepPreviousPowerI
 	dieRoller := &testutility.AlwaysMissDieRoller{}
 
 	powerReport := powerusage.UsePowerAgainstSquaddiesAndGetResults(
+		nil,
 		suite.blot,
 		suite.teros,
 		[]*squaddie.Squaddie{
@@ -591,6 +598,7 @@ func (suite *SquaddieCommitToPowerUsageSuite) TestSquaddieWillNotEquipPowerIfNon
 	dieRoller := &testutility.AlwaysMissDieRoller{}
 
 	powerReport := powerusage.UsePowerAgainstSquaddiesAndGetResults(
+		nil,
 		suite.blot,
 		mysticMage,
 		[]*squaddie.Squaddie{
@@ -662,7 +670,9 @@ func (suite *TargetAttemptsCounterSuite) TestTargetWillCounterAttackWithEquipped
 	powerusage.SquaddieEquipPower(suite.teros, suite.spear.ID, suite.powerRepo)
 	powerusage.SquaddieEquipPower(suite.bandit, suite.axe.ID, suite.powerRepo)
 
-	expectedTerosCounterAttackSummary := powerusage.GetExpectedDamage(&powerusage.AttackContext{
+	expectedTerosCounterAttackSummary := powerusage.GetExpectedDamage(
+		nil,
+		&powerusagecontext.AttackContext{
 		Power:				suite.spear,
 		Attacker:			suite.teros,
 		Target:				suite.bandit,
@@ -671,7 +681,9 @@ func (suite *TargetAttemptsCounterSuite) TestTargetWillCounterAttackWithEquipped
 	})
 	terosHitRate := expectedTerosCounterAttackSummary.HitRate
 
-	banditAttackSummary := powerusage.GetExpectedDamage(&powerusage.AttackContext{
+	banditAttackSummary := powerusage.GetExpectedDamage(
+		nil,
+		&powerusagecontext.AttackContext{
 		Power:				suite.axe,
 		Attacker:			suite.bandit,
 		Target:				suite.teros,

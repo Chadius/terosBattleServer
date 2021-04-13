@@ -28,7 +28,7 @@ func main() {
 
 	println("---")
 	dieRoller := &utility.RandomDieRoller{}
-	attackResults := powerusage.UsePowerAgainstSquaddiesAndGetResults(power, attacker, []*squaddie.Squaddie{target}, dieRoller)
+	attackResults := powerusage.UsePowerAgainstSquaddiesAndGetResults(nil, power, attacker, []*squaddie.Squaddie{target}, dieRoller)
 	if !attackResults.AttackingPowerResults[0].WasAHit {
 		println("Missed")
 	} else if attackResults.AttackingPowerResults[0].WasACriticalHit {

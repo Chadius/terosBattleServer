@@ -2,26 +2,20 @@ package powerusage
 
 import (
 	"github.com/cserrant/terosBattleServer/entity/power"
+	"github.com/cserrant/terosBattleServer/entity/powerusagecontext"
 	"github.com/cserrant/terosBattleServer/entity/squaddie"
 )
 
-// PowerSummary showcases the expected results of using a given power.
-type PowerSummary struct {
-	UserSquaddieID 		string
-	PowerID        		string
-	AttackEffectSummary []*AttackingPowerSummary
-}
-
 // GetPowerSummary returns a summary.
-func GetPowerSummary(power *power.Power, user *squaddie.Squaddie, targetSquaddies []*squaddie.Squaddie) *PowerSummary {
-	summary := &PowerSummary{
+func GetPowerSummary(power *power.Power, user *squaddie.Squaddie, targetSquaddies []*squaddie.Squaddie) *powerusagecontext.PowerForecast {
+	summary := &powerusagecontext.PowerForecast{
 		UserSquaddieID: user.ID,
 		PowerID: power.ID,
-		AttackEffectSummary: []*AttackingPowerSummary{},
+		AttackEffectSummary: []*powerusagecontext.AttackingPowerForecast{},
 	}
 
 	for _, target := range targetSquaddies {
-		summary.AttackEffectSummary = append(summary.AttackEffectSummary, GetExpectedDamage(&AttackContext{
+		summary.AttackEffectSummary = append(summary.AttackEffectSummary, GetExpectedDamage(nil, &powerusagecontext.AttackContext{
 			Power:           power,
 			Attacker:        user,
 			Target:          target,

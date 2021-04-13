@@ -3,6 +3,7 @@ package powerusage
 import (
 	"fmt"
 	"github.com/cserrant/terosBattleServer/entity/power"
+	"github.com/cserrant/terosBattleServer/entity/powerusagecontext"
 	"github.com/cserrant/terosBattleServer/entity/squaddie"
 )
 
@@ -97,57 +98,15 @@ func calculateDamageAfterInitialBarrierAbsorption(target *squaddie.Squaddie, dam
 	return damageToAbsorb, barrierDamage, remainingBarrier
 }
 
-// AttackingPowerSummary gives a summary of the chance to hit and damage dealt by attacks.
-type AttackingPowerSummary struct {
-	AttackingSquaddieID				string
-	PowerID							string
-	TargetSquaddieID				string
-
-	CriticalHitThreshold			int
-	ChanceToHit						int
-	DamageTaken						int
-	HitRate							int
-	BarrierDamageTaken				int
-
-	//  Expected damage counts the number of 36ths so we can use integers for fractional math.
-	ExpectedDamage					int
-	ExpectedBarrierDamage			int
-	ChanceToCritical				int
-	CriticalExpectedDamage			int
-	CriticalExpectedBarrierDamage	int
-
-	CriticalDamageTaken				int
-	CriticalBarrierDamageTaken		int
-
-	IsACounterAttack				bool
-	CounterAttack                 	*AttackingPowerSummary
-}
-
-// AttackContext holds the information needed to calculate expected damage.
-type AttackContext struct {
-	Power           *power.Power
-	Attacker        *squaddie.Squaddie
-	Target          *squaddie.Squaddie
-	IsCounterAttack bool
-	PowerRepo       *power.Repository
-}
-
-func (context *AttackContext) Clone() *AttackContext {
-	return &AttackContext{
-		Power:           context.Power,
-		Attacker:        context.Attacker,
-		Target:          context.Target,
-		IsCounterAttack: context.IsCounterAttack,
-		PowerRepo:       context.PowerRepo,
-	}
-}
-
 // GetExpectedDamage provides a summary of what the attacker's attackingPower will do against the given target.
-func GetExpectedDamage(context *AttackContext) (battleSummary *AttackingPowerSummary) {
-	attackingPower := context.Power
-	attacker := context.Attacker
-	target := context.Target
-	isCounterAttack := context.IsCounterAttack
+func GetExpectedDamage(
+	context *powerusagecontext.PowerUsageContext,
+	attackContext *powerusagecontext.AttackContext) (battleSummary *powerusagecontext.AttackingPowerForecast) {
+
+	attackingPower := attackContext.Power
+	attacker := attackContext.Attacker
+	target := attackContext.Target
+	isCounterAttack := attackContext.IsCounterAttack
 
 	toHitBonus := GetPowerToHitBonusWhenUsedBySquaddie(attackingPower, attacker, isCounterAttack)
 	toHitPenalty := GetPowerToHitPenaltyAgainstSquaddie(attackingPower, target)
@@ -163,17 +122,17 @@ func GetExpectedDamage(context *AttackContext) (battleSummary *AttackingPowerSum
 		criticalHealthDamage, criticalBarrierDamage, criticalExtraBarrierDamage = 0, 0, 0
 	}
 
-	var counterAttackSummary *AttackingPowerSummary = nil
-	if (isCounterAttack == false && CanTargetSquaddieCounterAttack(context)) {
-		counterAttackContext := context.Clone()
-		counterAttackContext.Attacker = context.Target
-		counterAttackContext.Target = context.Attacker
+	var counterAttackSummary *powerusagecontext.AttackingPowerForecast = nil
+	if (isCounterAttack == false && CanTargetSquaddieCounterAttack(attackContext)) {
+		counterAttackContext := attackContext.Clone()
+		counterAttackContext.Attacker = attackContext.Target
+		counterAttackContext.Target = attackContext.Attacker
 		counterAttackContext.IsCounterAttack = true
-		counterAttackContext.Power = GetEquippedPower(counterAttackContext.Attacker, context.PowerRepo)
-		counterAttackSummary = GetExpectedDamage(counterAttackContext)
+		counterAttackContext.Power = GetEquippedPower(counterAttackContext.Attacker, attackContext.PowerRepo)
+		counterAttackSummary = GetExpectedDamage(context, counterAttackContext)
 	}
 
-	return &AttackingPowerSummary{
+	return &powerusagecontext.AttackingPowerForecast{
 		AttackingSquaddieID:			attacker.ID,
 		PowerID:						attackingPower.ID,
 		TargetSquaddieID: 				target.ID,
@@ -195,7 +154,7 @@ func GetExpectedDamage(context *AttackContext) (battleSummary *AttackingPowerSum
 }
 
 // CanTargetSquaddieCounterAttack returns true if the target can counterAttack the attacker.
-func CanTargetSquaddieCounterAttack(context *AttackContext) bool {
+func CanTargetSquaddieCounterAttack(context *powerusagecontext.AttackContext) bool {
 	return CanSquaddieCounterWithEquippedWeapon(context.Target, context.PowerRepo)
 }
 
