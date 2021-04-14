@@ -21,21 +21,19 @@ type PowerUsageContext struct {
 
 // AttackContext holds the information needed to calculate expected damage.
 type AttackContext struct {
-	Power           *power.Power
-	Attacker        *squaddie.Squaddie
-	Target          *squaddie.Squaddie
-	IsCounterAttack bool
-	PowerRepo       *power.Repository
+	PowerID				string
+	AttackerID			string
+	TargetID			string
+	IsCounterAttack		bool
 }
 
 // Clone returns a duplicate of the AttackContext.
 func (context *AttackContext) Clone() *AttackContext {
 	return &AttackContext{
-		Power:           context.Power,
-		Attacker:        context.Attacker,
-		Target:          context.Target,
+		PowerID:           context.PowerID,
+		AttackerID:        context.AttackerID,
+		TargetID:          context.TargetID,
 		IsCounterAttack: context.IsCounterAttack,
-		PowerRepo:       context.PowerRepo,
 	}
 }
 

@@ -103,9 +103,9 @@ func GetExpectedDamage(
 	context *powerusagecontext.PowerUsageContext,
 	attackContext *powerusagecontext.AttackContext) (battleSummary *powerusagecontext.AttackingPowerForecast) {
 
-	attackingPower := attackContext.Power
-	attacker := attackContext.Attacker
-	target := attackContext.Target
+	attackingPower := context.PowerRepo.GetPowerByID(attackContext.PowerID)
+	attacker := context.SquaddieRepo.GetOriginalSquaddieByID(attackContext.AttackerID)
+	target := context.SquaddieRepo.GetOriginalSquaddieByID(attackContext.TargetID)
 	isCounterAttack := attackContext.IsCounterAttack
 
 	toHitBonus := GetPowerToHitBonusWhenUsedBySquaddie(attackingPower, attacker, isCounterAttack)
@@ -123,12 +123,12 @@ func GetExpectedDamage(
 	}
 
 	var counterAttackSummary *powerusagecontext.AttackingPowerForecast = nil
-	if (isCounterAttack == false && CanTargetSquaddieCounterAttack(attackContext)) {
+	if isCounterAttack == false && CanTargetSquaddieCounterAttack(context, attackContext) {
 		counterAttackContext := attackContext.Clone()
-		counterAttackContext.Attacker = attackContext.Target
-		counterAttackContext.Target = attackContext.Attacker
+		counterAttackContext.AttackerID = attackContext.TargetID
+		counterAttackContext.TargetID = attackContext.AttackerID
 		counterAttackContext.IsCounterAttack = true
-		counterAttackContext.Power = GetEquippedPower(counterAttackContext.Attacker, attackContext.PowerRepo)
+		counterAttackContext.PowerID = GetEquippedPower(target, context.PowerRepo).ID
 		counterAttackSummary = GetExpectedDamage(context, counterAttackContext)
 	}
 
@@ -154,8 +154,9 @@ func GetExpectedDamage(
 }
 
 // CanTargetSquaddieCounterAttack returns true if the target can counterAttack the attacker.
-func CanTargetSquaddieCounterAttack(context *powerusagecontext.AttackContext) bool {
-	return CanSquaddieCounterWithEquippedWeapon(context.Target, context.PowerRepo)
+func CanTargetSquaddieCounterAttack(context *powerusagecontext.PowerUsageContext, attackContext *powerusagecontext.AttackContext) bool {
+	target := context.SquaddieRepo.GetOriginalSquaddieByID(attackContext.TargetID)
+	return CanSquaddieCounterWithEquippedWeapon(target, context.PowerRepo)
 }
 
 // GetPowerToHitPenaltyAgainstSquaddie calculates how much the target can reduce the chance of getting hit by the attacking power.

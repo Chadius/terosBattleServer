@@ -7,7 +7,7 @@ import (
 )
 
 // GetPowerSummary returns a summary.
-func GetPowerSummary(power *power.Power, user *squaddie.Squaddie, targetSquaddies []*squaddie.Squaddie) *powerusagecontext.PowerForecast {
+func GetPowerSummary(context *powerusagecontext.PowerUsageContext, power *power.Power, user *squaddie.Squaddie, targetSquaddies []*squaddie.Squaddie) *powerusagecontext.PowerForecast {
 	summary := &powerusagecontext.PowerForecast{
 		UserSquaddieID: user.ID,
 		PowerID: power.ID,
@@ -15,10 +15,10 @@ func GetPowerSummary(power *power.Power, user *squaddie.Squaddie, targetSquaddie
 	}
 
 	for _, target := range targetSquaddies {
-		summary.AttackEffectSummary = append(summary.AttackEffectSummary, GetExpectedDamage(nil, &powerusagecontext.AttackContext{
-			Power:           power,
-			Attacker:        user,
-			Target:          target,
+		summary.AttackEffectSummary = append(summary.AttackEffectSummary, GetExpectedDamage(context, &powerusagecontext.AttackContext{
+			PowerID:           power.ID,
+			AttackerID:        user.ID,
+			TargetID:          target.ID,
 			IsCounterAttack: false,
 		}))
 	}
