@@ -503,11 +503,6 @@ func (suite *CreatePowerReportSuite) TestPowerReportWhenMissed(checker *C) {
 			PowerID:           suite.blot.ID,
 			PowerRepo:         suite.powerRepo,
 		},
-		suite.blot,
-		suite.teros,
-		[]*squaddie.Squaddie{
-			suite.bandit,
-		},
 		dieRoller,
 	)
 	checker.Assert(powerResult.AttackerID, Equals, suite.teros.ID)
@@ -527,11 +522,6 @@ func (suite *CreatePowerReportSuite) TestPowerReportWhenHitButNoCrit(checker *C)
 			TargetSquaddieIDs: []string{suite.bandit.ID},
 			PowerID:           suite.blot.ID,
 			PowerRepo:         suite.powerRepo,
-		},
-		suite.blot,
-		suite.teros,
-		[]*squaddie.Squaddie{
-			suite.bandit,
 		},
 		dieRoller,
 	)
@@ -557,11 +547,6 @@ func (suite *CreatePowerReportSuite) TestPowerReportWhenCrits(checker *C) {
 			PowerID:           suite.blot.ID,
 			PowerRepo:         suite.powerRepo,
 		},
-		suite.blot,
-		suite.teros,
-		[]*squaddie.Squaddie{
-			suite.bandit,
-		},
 		dieRoller,
 	)
 	checker.Assert(powerResult.AttackerID, Equals, suite.teros.ID)
@@ -584,12 +569,6 @@ func (suite *CreatePowerReportSuite) TestReportPerTarget(checker *C) {
 			TargetSquaddieIDs: []string{suite.bandit.ID, suite.bandit2.ID},
 			PowerID:           suite.blot.ID,
 			PowerRepo:         suite.powerRepo,
-		},
-		suite.blot,
-		suite.teros,
-		[]*squaddie.Squaddie{
-			suite.bandit,
-			suite.bandit2,
 		},
 		dieRoller,
 	)
@@ -659,11 +638,6 @@ func (suite *SquaddieCommitToPowerUsageSuite) TestSquaddiesEquipPowerUponCommit(
 			PowerID:           suite.scimitar.ID,
 			PowerRepo:         suite.powerRepo,
 		},
-		suite.scimitar,
-		suite.teros,
-		[]*squaddie.Squaddie{
-			suite.bandit,
-		},
 		dieRoller,
 	)
 
@@ -683,11 +657,6 @@ func (suite *SquaddieCommitToPowerUsageSuite) TestSquaddieWillKeepPreviousPowerI
 			TargetSquaddieIDs: []string{suite.bandit.ID},
 			PowerID:           suite.blot.ID,
 			PowerRepo:         suite.powerRepo,
-		},
-		suite.blot,
-		suite.teros,
-		[]*squaddie.Squaddie{
-			suite.bandit,
 		},
 		dieRoller,
 	)
@@ -716,11 +685,6 @@ func (suite *SquaddieCommitToPowerUsageSuite) TestSquaddieWillNotEquipPowerIfNon
 			TargetSquaddieIDs: []string{suite.bandit.ID},
 			PowerID:           suite.blot.ID,
 			PowerRepo:         suite.powerRepo,
-		},
-		suite.blot,
-		mysticMage,
-		[]*squaddie.Squaddie{
-			suite.bandit,
 		},
 		dieRoller,
 	)

@@ -1,45 +1,43 @@
 package powerusage
 
 import (
-	"github.com/cserrant/terosBattleServer/entity/power"
 	"github.com/cserrant/terosBattleServer/entity/powerusagecontext"
 	"github.com/cserrant/terosBattleServer/entity/report"
-	"github.com/cserrant/terosBattleServer/entity/squaddie"
 	"github.com/cserrant/terosBattleServer/utility"
 )
 
 // UsePowerAgainstSquaddiesAndGetResults will make the actingSquaddie use the powerUsed against all targetSquaddies.
 //   Returns a report indicating what happened to each target.
-func UsePowerAgainstSquaddiesAndGetResults(context *powerusagecontext.PowerUsageContext, powerUsed *power.Power, actingSquaddie *squaddie.Squaddie, targetSquaddies []*squaddie.Squaddie, d6generator utility.SixSideGenerator) *report.PowerReport {
+func UsePowerAgainstSquaddiesAndGetResults(context *powerusagecontext.PowerUsageContext, d6generator utility.SixSideGenerator) *report.PowerReport {
 	powerResults := &report.PowerReport{
-		AttackerID:            actingSquaddie.ID,
-		PowerID:               powerUsed.ID,
+		AttackerID:            context.ActingSquaddieID,
+		PowerID:               context.PowerID,
 		AttackingPowerResults: []*report.AttackingPowerReport{},
 	}
 
-	for _, targetSquaddie := range targetSquaddies {
-		attackingResult := GetAttackEffectResults(context, powerUsed, actingSquaddie, targetSquaddie, d6generator)
+	for _, targetSquaddieID := range context.TargetSquaddieIDs {
+		attackingResult := GetAttackEffectResults(context, targetSquaddieID, d6generator)
 		powerResults.AttackingPowerResults = append(powerResults.AttackingPowerResults, attackingResult)
 	}
 	return powerResults
 }
 
 // GetAttackEffectResults looks at the actingSquaddie's powerUsed's AttackingEffect to figure out what happened to the targetSquaddie.
-func GetAttackEffectResults(context *powerusagecontext.PowerUsageContext, powerUsed *power.Power, actingSquaddie *squaddie.Squaddie, targetSquaddie *squaddie.Squaddie, d6generator utility.SixSideGenerator) *report.AttackingPowerReport {
+func GetAttackEffectResults(context *powerusagecontext.PowerUsageContext, targetSquaddieID string, d6generator utility.SixSideGenerator) *report.AttackingPowerReport {
 	attackSummary := GetExpectedDamage(
 		context,
 		&powerusagecontext.AttackContext{
-			PowerID:           powerUsed.ID,
-			AttackerID:        actingSquaddie.ID,
-			TargetID:          targetSquaddie.ID,
-			IsCounterAttack: false,
+			PowerID:			context.PowerID,
+			AttackerID:			context.ActingSquaddieID,
+			TargetID:			targetSquaddieID,
+			IsCounterAttack: 	false,
 		},
 	)
 
 	didItHit := DetermineIfItHit(attackSummary, d6generator)
 	if !didItHit {
 		return &report.AttackingPowerReport{
-			TargetID:        targetSquaddie.ID,
+			TargetID:        targetSquaddieID,
 			DamageTaken:     0,
 			BarrierDamage:   0,
 			WasAHit:         false,
@@ -50,7 +48,7 @@ func GetAttackEffectResults(context *powerusagecontext.PowerUsageContext, powerU
 	didItCrit := DetermineIfItWasACriticalHit(attackSummary, d6generator)
 	if !didItCrit {
 		return &report.AttackingPowerReport{
-			TargetID:        targetSquaddie.ID,
+			TargetID:        targetSquaddieID,
 			DamageTaken:     attackSummary.DamageTaken,
 			BarrierDamage:   attackSummary.BarrierDamageTaken,
 			WasAHit:         true,
@@ -59,7 +57,7 @@ func GetAttackEffectResults(context *powerusagecontext.PowerUsageContext, powerU
 	}
 
 	return &report.AttackingPowerReport{
-		TargetID:        targetSquaddie.ID,
+		TargetID:        targetSquaddieID,
 		DamageTaken:     attackSummary.CriticalDamageTaken,
 		BarrierDamage:   attackSummary.CriticalBarrierDamageTaken,
 		WasAHit:         true,
