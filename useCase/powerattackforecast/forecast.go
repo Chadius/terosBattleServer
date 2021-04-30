@@ -1,4 +1,4 @@
-package powerattackusage
+package powerattackforecast
 
 import (
 	"github.com/cserrant/terosBattleServer/entity/power"
@@ -29,7 +29,9 @@ type Calculation struct {
 
 // AttackForecast shows what will happen if the power used is offensive.
 type AttackForecast struct {
-	TotalToHitBonus	int
+	AttackerContext AttackerContext
+	DefenderContext DefenderContext
+	VersusContext VersusContext
 }
 
 // CalculateForecast uses the given Setup and anticipates what will happen
@@ -45,17 +47,18 @@ func (forecast *Forecast) CalculateForecast() {
 
 // CalculateAttackForecast figures out what will happen when this attack power is used.
 func (forecast *Forecast) CalculateAttackForecast(targetID string) *AttackForecast {
-	//user := forecast.Setup.SquaddieRepo.GetOriginalSquaddieByID(forecast.Setup.UserID)
-	//power := forecast.Setup.PowerRepo.GetPowerByID(forecast.Setup.PowerID)
-	//target := forecast.Setup.SquaddieRepo.GetOriginalSquaddieByID(targetID)
+	attackerContext := AttackerContext{AttackerID: forecast.Setup.UserID}
+	attackerContext.calculate(forecast.Setup)
+
+	defenderContext := DefenderContext{TargetID: targetID}
+	defenderContext.calculate(forecast.Setup)
+
+	versusContext := VersusContext{}
+	versusContext.calculate(attackerContext, defenderContext)
 
 	return &AttackForecast{
-		TotalToHitBonus: forecast.calculateToHitBonus(),
+		AttackerContext: attackerContext,
+		DefenderContext: defenderContext,
+		VersusContext: versusContext,
 	}
-}
-
-func (forecast *Forecast) calculateToHitBonus() int {
-	user := forecast.Setup.SquaddieRepo.GetOriginalSquaddieByID(forecast.Setup.UserID)
-	power := forecast.Setup.PowerRepo.GetPowerByID(forecast.Setup.PowerID)
-	return power.AttackEffect.ToHitBonus + user.Offense.Aim
 }
