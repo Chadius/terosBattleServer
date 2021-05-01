@@ -220,7 +220,7 @@ func (suite *CalculateExpectedDamageFromAttackSuite) TestPowerDealsExtraBarrierD
 
 	suite.bandit.Defense.MaxBarrier = 8
 	suite.bandit.Defense.CurrentBarrier = 8
-	suite.blot.AttackEffect.ExtraBarrierDamage = 2
+	suite.blot.AttackEffect.ExtraBarrierBurn = 2
 
 	totalHealthDamage, initialBarrierDamage, extraBarrierDamage := powerforecast.GetHowTargetDistributesDamage(suite.blot, suite.teros, suite.bandit)
 	checker.Assert(totalHealthDamage, Equals, 0)
@@ -234,7 +234,7 @@ func (suite *CalculateExpectedDamageFromAttackSuite) TestSummaryKnowsExtraBarrie
 
 	suite.bandit.Defense.MaxBarrier = 8
 	suite.bandit.Defense.CurrentBarrier = 7
-	suite.blot.AttackEffect.ExtraBarrierDamage = 2
+	suite.blot.AttackEffect.ExtraBarrierBurn = 2
 
 	totalHealthDamage, initialBarrierDamage, extraBarrierDamage := powerforecast.GetHowTargetDistributesDamage(suite.blot, suite.teros, suite.bandit)
 	checker.Assert(totalHealthDamage, Equals, 0)
@@ -289,7 +289,7 @@ func (suite *CalculateExpectedDamageFromAttackSuite) TestSummaryWithBarrierBurn(
 	suite.teros.Offense.Aim = 3
 	suite.teros.Offense.Mind = 2
 	suite.blot.AttackEffect.DamageBonus = 4
-	suite.blot.AttackEffect.ExtraBarrierDamage = 3
+	suite.blot.AttackEffect.ExtraBarrierBurn = 3
 	attackingPowerSummary := powerforecast.GetExpectedDamage(
 		&powerusagecontext.PowerUsageContext{
 			SquaddieRepo:      suite.squaddieRepo,

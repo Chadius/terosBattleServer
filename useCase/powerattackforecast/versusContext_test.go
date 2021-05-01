@@ -100,9 +100,11 @@ func (suite *VersusContext) TestTargetUsesArmorResistAgainstPhysicalOnly(checker
 	suite.bandit.Defense.CurrentBarrier = 0
 
 	suite.forecastSpearOnBandit.CalculateForecast()
+	checker.Assert(suite.forecastSpearOnBandit.ForecastedResultPerTarget[0].Attack.VersusContext.DamageAbsorbedByArmor, Equals, 1)
 	checker.Assert(suite.forecastSpearOnBandit.ForecastedResultPerTarget[0].Attack.VersusContext.DamageDealt, Equals, 2)
 
 	suite.forecastBlotOnBandit.CalculateForecast()
+	checker.Assert(suite.forecastBlotOnBandit.ForecastedResultPerTarget[0].Attack.VersusContext.DamageAbsorbedByArmor, Equals, 0)
 	checker.Assert(suite.forecastBlotOnBandit.ForecastedResultPerTarget[0].Attack.VersusContext.DamageDealt, Equals, 5)
 }
 
@@ -111,8 +113,34 @@ func (suite *VersusContext) TestTargetUsesBarrierToResistDamageFromAllAttacks(ch
 	suite.bandit.Defense.CurrentBarrier = 3
 
 	suite.forecastSpearOnBandit.CalculateForecast()
+	checker.Assert(suite.forecastSpearOnBandit.ForecastedResultPerTarget[0].Attack.VersusContext.DamageAbsorbedByBarrier, Equals, 3)
 	checker.Assert(suite.forecastSpearOnBandit.ForecastedResultPerTarget[0].Attack.VersusContext.DamageDealt, Equals, 0)
 
 	suite.forecastBlotOnBandit.CalculateForecast()
+	checker.Assert(suite.forecastSpearOnBandit.ForecastedResultPerTarget[0].Attack.VersusContext.DamageAbsorbedByBarrier, Equals, 3)
 	checker.Assert(suite.forecastBlotOnBandit.ForecastedResultPerTarget[0].Attack.VersusContext.DamageDealt, Equals, 2)
+}
+
+func (suite *VersusContext) TestBarrierBurnCanSpillOverDamage(checker *C) {
+	suite.blot.AttackEffect.DamageBonus = 1
+	suite.blot.AttackEffect.ExtraBarrierBurn = 2
+	suite.forecastBlotOnBandit.CalculateForecast()
+	checker.Assert(suite.forecastBlotOnBandit.ForecastedResultPerTarget[0].Attack.VersusContext.DamageAbsorbedByBarrier, Equals, 1)
+
+	checker.Assert(suite.forecastBlotOnBandit.ForecastedResultPerTarget[0].Attack.VersusContext.ExtraBarrierBurnt, Equals, 2)
+	checker.Assert(suite.forecastBlotOnBandit.ForecastedResultPerTarget[0].Attack.VersusContext.TotalBarrierBurnt, Equals, 3)
+
+	checker.Assert(suite.forecastBlotOnBandit.ForecastedResultPerTarget[0].Attack.VersusContext.DamageDealt, Equals, 2)
+}
+
+func (suite *VersusContext) TestBarrierBurnCanBeTolerated(checker *C) {
+	suite.blot.AttackEffect.DamageBonus = 0
+	suite.blot.AttackEffect.ExtraBarrierBurn = 1
+	suite.forecastBlotOnBandit.CalculateForecast()
+	checker.Assert(suite.forecastBlotOnBandit.ForecastedResultPerTarget[0].Attack.VersusContext.DamageAbsorbedByBarrier, Equals, 2)
+
+	checker.Assert(suite.forecastBlotOnBandit.ForecastedResultPerTarget[0].Attack.VersusContext.ExtraBarrierBurnt, Equals, 1)
+	checker.Assert(suite.forecastBlotOnBandit.ForecastedResultPerTarget[0].Attack.VersusContext.TotalBarrierBurnt, Equals, 3)
+
+	checker.Assert(suite.forecastBlotOnBandit.ForecastedResultPerTarget[0].Attack.VersusContext.DamageDealt, Equals, 0)
 }

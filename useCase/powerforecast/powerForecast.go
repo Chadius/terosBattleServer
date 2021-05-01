@@ -154,11 +154,11 @@ func calculateDamageAfterArmorAbsorption(attackingPower *power.Power, target *sq
 }
 
 func calculateDamageAfterExtraBarrierDamage(attackingPower *power.Power, remainingBarrier int, extraBarrierDamage int) int {
-	if attackingPower.AttackEffect.ExtraBarrierDamage > 0 {
-		var barrierFullyAbsorbsExtraBarrierDamage bool = remainingBarrier > attackingPower.AttackEffect.ExtraBarrierDamage
+	if attackingPower.AttackEffect.ExtraBarrierBurn > 0 {
+		var barrierFullyAbsorbsExtraBarrierDamage bool = remainingBarrier > attackingPower.AttackEffect.ExtraBarrierBurn
 		if barrierFullyAbsorbsExtraBarrierDamage {
-			extraBarrierDamage = attackingPower.AttackEffect.ExtraBarrierDamage
-			remainingBarrier = remainingBarrier - attackingPower.AttackEffect.ExtraBarrierDamage
+			extraBarrierDamage = attackingPower.AttackEffect.ExtraBarrierBurn
+			remainingBarrier = remainingBarrier - attackingPower.AttackEffect.ExtraBarrierBurn
 		} else {
 			extraBarrierDamage = remainingBarrier
 			remainingBarrier = 0

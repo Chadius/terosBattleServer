@@ -39,13 +39,13 @@ func (p Power) GetReference() *Reference {
 
 // AttackingEffect is a power designed to deal damage.
 type AttackingEffect struct {
-	ToHitBonus                int	`json:"to_hit_bonus" yaml:"to_hit_bonus"`
-	DamageBonus               int	`json:"damage_bonus" yaml:"damage_bonus"`
-	ExtraBarrierDamage        int	`json:"extra_barrier_damage" yaml:"extra_barrier_damage"`
-	CriticalHitThreshold      int	`json:"critical_hit_threshold" yaml:"critical_hit_threshold"`
-	CanBeEquipped             bool	`json:"can_be_equipped" yaml:"can_be_equipped"`
-	CanCounterAttack          bool	`json:"can_counter_attack" yaml:"can_counter_attack"`
-	CounterAttackToHitPenalty int	`json:"counter_attack_penalty" yaml:"counter_attack_penalty"`
+	ToHitBonus                int  `json:"to_hit_bonus" yaml:"to_hit_bonus"`
+	DamageBonus               int  `json:"damage_bonus" yaml:"damage_bonus"`
+	ExtraBarrierBurn          int  `json:"extra_barrier_damage" yaml:"extra_barrier_damage"`
+	CriticalHitThreshold      int  `json:"critical_hit_threshold" yaml:"critical_hit_threshold"`
+	CanBeEquipped             bool `json:"can_be_equipped" yaml:"can_be_equipped"`
+	CanCounterAttack          bool `json:"can_counter_attack" yaml:"can_counter_attack"`
+	CounterAttackToHitPenalty int  `json:"counter_attack_penalty" yaml:"counter_attack_penalty"`
 }
 
 // NewPower generates a Power with default values.
@@ -59,7 +59,7 @@ func NewPower(name string) *Power {
 		AttackEffect: &AttackingEffect{
 			ToHitBonus:           0,
 			DamageBonus:          0,
-			ExtraBarrierDamage:   0,
+			ExtraBarrierBurn:     0,
 			CriticalHitThreshold: 0,
 		},
 	}

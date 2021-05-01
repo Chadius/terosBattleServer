@@ -5,15 +5,21 @@ import "github.com/cserrant/terosBattleServer/entity/power"
 // AttackerContext lists the attacker's relevant information when attacking
 type AttackerContext struct {
 	AttackerID		string
+
 	TotalToHitBonus int
+
 	RawDamage       int
 	DamageType      power.Type
+
+	ExtraBarrierBurn int
 }
 
 func (context *AttackerContext)calculate(setup ForecastSetup) {
 	power := setup.PowerRepo.GetPowerByID(setup.PowerID)
 
 	context.DamageType = power.PowerType
+	context.ExtraBarrierBurn = power.AttackEffect.ExtraBarrierBurn
+
 	context.RawDamage = context.calculateRawDamage(setup)
 	context.TotalToHitBonus = context.calculateToHitBonus(setup)
 }
