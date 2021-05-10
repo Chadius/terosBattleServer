@@ -12,6 +12,10 @@ type AttackerContext struct {
 	DamageType      power.Type
 
 	ExtraBarrierBurn int
+
+	CanCritical bool
+	CriticalHitThreshold int
+	CriticalHitDamage int
 }
 
 func (context *AttackerContext)calculate(setup ForecastSetup) {
@@ -22,6 +26,8 @@ func (context *AttackerContext)calculate(setup ForecastSetup) {
 
 	context.RawDamage = context.calculateRawDamage(setup)
 	context.TotalToHitBonus = context.calculateToHitBonus(setup)
+
+	context.calculateCriticalHit(setup)
 }
 
 func (context *AttackerContext) calculateToHitBonus(setup ForecastSetup) int {
@@ -41,4 +47,16 @@ func (context *AttackerContext) calculateRawDamage(setup ForecastSetup) int {
 		return powerToAttackWith.AttackEffect.DamageBonus + user.Offense.Mind
 	}
 	return 0
+}
+
+func (context *AttackerContext) calculateCriticalHit(setup ForecastSetup) {
+	power := setup.PowerRepo.GetPowerByID(setup.PowerID)
+	if power.AttackEffect.CriticalHitThreshold == 0 {
+		context.CanCritical = false
+		return
+	}
+
+	context.CanCritical = true
+	context.CriticalHitThreshold = power.AttackEffect.CriticalHitThreshold
+	context.CriticalHitDamage = context.RawDamage * 2
 }

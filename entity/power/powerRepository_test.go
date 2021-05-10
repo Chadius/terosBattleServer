@@ -69,7 +69,20 @@ func (suite *PowerCreationSuite) TestReturnNilIfIDDoesNotExist(checker *C) {
 func (suite *PowerCreationSuite) TestSearchForPowerByName(checker *C) {
 	allSpearPowers := suite.repo.GetAllPowersByName("Spear")
 	checker.Assert(allSpearPowers, HasLen, 2)
-	checker.Assert(allSpearPowers, DeepEquals, []*power.Power{suite.spear, suite.spear2})
+
+	hasSpearPower := false
+	hasSpear2Power := false
+	for _, power := range allSpearPowers {
+		if power.ID == suite.spear.ID {
+			hasSpearPower = true
+		}
+		if power.ID == suite.spear2.ID {
+			hasSpear2Power = true
+		}
+	}
+
+	checker.Assert(hasSpearPower, Equals, true)
+	checker.Assert(hasSpear2Power, Equals, true)
 }
 
 func (suite *PowerCreationSuite) TestLoadPowersWithJSON(checker *C) {

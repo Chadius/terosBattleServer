@@ -87,3 +87,12 @@ func (suite *AttackContext) TestGetAttackerSpellDamage(checker *C) {
 	checker.Assert(suite.forecastBlotOnBandit.ForecastedResultPerTarget[0].Attack.AttackerContext.DamageType, Equals, power.Type(power.Spell))
 	checker.Assert(suite.forecastBlotOnBandit.ForecastedResultPerTarget[0].Attack.AttackerContext.RawDamage, Equals, 5)
 }
+
+func (suite *AttackContext) TestCriticalHits(checker *C) {
+	suite.spear.AttackEffect.CriticalHitThreshold = 8
+	suite.forecastSpearOnBandit.CalculateForecast()
+
+	checker.Assert(suite.forecastSpearOnBandit.ForecastedResultPerTarget[0].Attack.AttackerContext.CanCritical, Equals, true)
+	checker.Assert(suite.forecastSpearOnBandit.ForecastedResultPerTarget[0].Attack.AttackerContext.CriticalHitThreshold, Equals, 8)
+	checker.Assert(suite.forecastSpearOnBandit.ForecastedResultPerTarget[0].Attack.AttackerContext.CriticalHitDamage, Equals, 6)
+}

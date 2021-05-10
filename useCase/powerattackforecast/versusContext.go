@@ -6,38 +6,63 @@ import "github.com/cserrant/terosBattleServer/entity/power"
 type VersusContext struct {
 	ToHitBonus int
 
-	DamageAbsorbedByArmor   int
-	DamageAbsorbedByBarrier int
-	DamageDealt             int
+	NormalDamage *DamageDistribution
+	CriticalHitDamage *DamageDistribution
 
 	ExtraBarrierBurnt int
 	TotalBarrierBurnt int
+
+	CanCritical bool
+	CriticalHitThreshold int
+}
+
+// DamageDistribution tracks how damage is distributed.
+type DamageDistribution struct {
+	DamageAbsorbedByArmor   int
+	DamageAbsorbedByBarrier int
+	DamageDealt             int
 }
 
 func (context *VersusContext) getPower(setup ForecastSetup) *power.Power {
 	return setup.PowerRepo.GetPowerByID(setup.PowerID)
 }
 
-func (context *VersusContext)calculate(attackerContext AttackerContext, defenderContext DefenderContext) {
+func (context *VersusContext) calculate(attackerContext AttackerContext, defenderContext DefenderContext) {
 	context.ToHitBonus = context.calculateToHitBonus(attackerContext, defenderContext)
-	context.setDamageBreakdown(attackerContext, defenderContext)
+	context.setNormalDamageBreakdown(attackerContext, defenderContext)
+
+	context.setCriticalHitChance(attackerContext)
+	context.setCriticalDamageBreakdown(attackerContext, defenderContext)
 }
 
 func (context *VersusContext) calculateToHitBonus(attackerContext AttackerContext, defenderContext DefenderContext) int {
 	return attackerContext.TotalToHitBonus - defenderContext.TotalToHitPenalty
 }
 
-func (context *VersusContext) setDamageBreakdown(attackerContext AttackerContext, defenderContext DefenderContext) {
-	damageDealtToTarget := attackerContext.RawDamage
+func (context *VersusContext) setNormalDamageBreakdown(attackerContext AttackerContext, defenderContext DefenderContext) {
+	context.NormalDamage = context.setDamageBreakdown(attackerContext.RawDamage, attackerContext, defenderContext)
+}
 
-	context.setBarrierBurntAndDamageAbsorbed(attackerContext, defenderContext, damageDealtToTarget)
-	damageDealtToTarget -= context.DamageAbsorbedByBarrier
-	context.TotalBarrierBurnt = context.DamageAbsorbedByBarrier + context.ExtraBarrierBurnt
+func (context *VersusContext) setCriticalDamageBreakdown(attackerContext AttackerContext, defenderContext DefenderContext) {
+	if context.CanCritical {
+		context.CriticalHitDamage = context.setDamageBreakdown(attackerContext.CriticalHitDamage, attackerContext, defenderContext)
+	}
+}
 
-	context.DamageAbsorbedByArmor = context.calculateDamageAbsorbedByArmor(attackerContext, defenderContext, damageDealtToTarget)
-	damageDealtToTarget -= context.DamageAbsorbedByArmor
+func (context *VersusContext) setDamageBreakdown(damageDealtToTarget int, attackerContext AttackerContext, defenderContext DefenderContext) *DamageDistribution {
+	distribution := &DamageDistribution{}
 
-	context.DamageDealt = damageDealtToTarget
+	context.setBarrierBurntAndDamageAbsorbed(distribution, attackerContext, defenderContext, damageDealtToTarget)
+
+	damageDealtToTarget -= distribution.DamageAbsorbedByBarrier
+	context.TotalBarrierBurnt = distribution.DamageAbsorbedByBarrier + context.ExtraBarrierBurnt
+
+	distribution.DamageAbsorbedByArmor = context.calculateDamageAbsorbedByArmor(attackerContext, defenderContext, damageDealtToTarget)
+	damageDealtToTarget -= distribution.DamageAbsorbedByArmor
+
+	distribution.DamageDealt = damageDealtToTarget
+
+	return distribution
 }
 
 func (context *VersusContext) calculateDamageAbsorbedByArmor(attackerContext AttackerContext, defenderContext DefenderContext, damageDealtToTarget int) int {
@@ -53,19 +78,19 @@ func (context *VersusContext) calculateDamageAbsorbedByArmor(attackerContext Att
 	}
 }
 
-func (context *VersusContext) setBarrierBurntAndDamageAbsorbed(attackerContext AttackerContext, defenderContext DefenderContext, damageDealtToTarget int) {
+func (context *VersusContext) setBarrierBurntAndDamageAbsorbed(distribution *DamageDistribution, attackerContext AttackerContext, defenderContext DefenderContext, damageDealtToTarget int) {
 	barrierAbsorbsAllDamageAndExtraBurn := damageDealtToTarget + attackerContext.ExtraBarrierBurn <= defenderContext.BarrierResistance
 	if barrierAbsorbsAllDamageAndExtraBurn {
 		context.ExtraBarrierBurnt = attackerContext.ExtraBarrierBurn
-		context.DamageAbsorbedByBarrier = damageDealtToTarget
-		context.TotalBarrierBurnt = context.DamageAbsorbedByBarrier + context.ExtraBarrierBurnt
+		distribution.DamageAbsorbedByBarrier = damageDealtToTarget
+		context.TotalBarrierBurnt = distribution.DamageAbsorbedByBarrier + context.ExtraBarrierBurnt
 		return
 	}
 
 	barrierAbsorbsExtraBarrierBurn := attackerContext.ExtraBarrierBurn <= defenderContext.BarrierResistance
 	if !barrierAbsorbsExtraBarrierBurn {
 		context.ExtraBarrierBurnt = defenderContext.BarrierResistance
-		context.DamageAbsorbedByBarrier = 0
+		distribution.DamageAbsorbedByBarrier = 0
 		context.TotalBarrierBurnt = context.ExtraBarrierBurnt
 		return
 	}
@@ -75,13 +100,22 @@ func (context *VersusContext) setBarrierBurntAndDamageAbsorbed(attackerContext A
 	remainingBarrierAbsorbsDamage := damageDealtToTarget <= barrierRemainingAfterExtraBarrierBurn
 	if remainingBarrierAbsorbsDamage {
 		context.ExtraBarrierBurnt = attackerContext.ExtraBarrierBurn
-		context.DamageAbsorbedByBarrier = damageDealtToTarget
-		context.TotalBarrierBurnt = context.DamageAbsorbedByBarrier + context.ExtraBarrierBurnt
+		distribution.DamageAbsorbedByBarrier = damageDealtToTarget
+		context.TotalBarrierBurnt = distribution.DamageAbsorbedByBarrier + context.ExtraBarrierBurnt
 		return
 	}
 
 	context.ExtraBarrierBurnt = attackerContext.ExtraBarrierBurn
-	context.DamageAbsorbedByBarrier = barrierRemainingAfterExtraBarrierBurn
+	distribution.DamageAbsorbedByBarrier = barrierRemainingAfterExtraBarrierBurn
 	context.TotalBarrierBurnt = defenderContext.BarrierResistance
 	return
+}
+
+func (context *VersusContext) setCriticalHitChance(attackerContext AttackerContext) {
+	context.CanCritical = attackerContext.CanCritical
+	if context.CanCritical {
+		context.CriticalHitThreshold = attackerContext.CriticalHitThreshold
+	} else {
+		context.CriticalHitThreshold = 0
+	}
 }
