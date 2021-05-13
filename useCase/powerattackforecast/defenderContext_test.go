@@ -12,6 +12,7 @@ type DefenderContext struct {
 	bandit			*squaddie.Squaddie
 	spear			*power.Power
 	blot			*power.Power
+	axe			*power.Power
 
 	powerRepo 		*power.Repository
 	squaddieRepo 	*squaddie.Repository
@@ -44,11 +45,20 @@ func (suite *DefenderContext) SetUpTest(checker *C) {
 	suite.bandit.Defense.MaxBarrier = 3
 	suite.bandit.Defense.SetBarrierToMax()
 
+	suite.axe = power.NewPower("axe")
+	suite.axe.PowerType = power.Physical
+	suite.axe.AttackEffect.ToHitBonus = 1
+	suite.axe.AttackEffect.DamageBonus = 4
+	suite.axe.AttackEffect.CanCounterAttack = true
+	suite.axe.AttackEffect.CanBeEquipped = true
+
+	suite.bandit.PowerCollection.AddInnatePower(suite.axe)
+
 	suite.squaddieRepo = squaddie.NewSquaddieRepository()
 	suite.squaddieRepo.AddSquaddies([]*squaddie.Squaddie{suite.teros, suite.bandit})
 
 	suite.powerRepo = power.NewPowerRepository()
-	suite.powerRepo.AddSlicePowerSource([]*power.Power{suite.spear, suite.blot})
+	suite.powerRepo.AddSlicePowerSource([]*power.Power{suite.spear, suite.blot, suite.axe})
 
 	suite.forecastSpearOnBandit = &powerattackforecast.Forecast{
 		Setup: powerattackforecast.ForecastSetup{

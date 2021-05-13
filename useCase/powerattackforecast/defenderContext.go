@@ -15,21 +15,21 @@ type DefenderContext struct {
 	BarrierResistance int
 }
 
-func (context *DefenderContext) getPower(setup ForecastSetup) *power.Power {
+func (context *DefenderContext) getPower(setup *ForecastSetup) *power.Power {
 	return setup.PowerRepo.GetPowerByID(setup.PowerID)
 }
 
-func (context *DefenderContext) getTarget(setup ForecastSetup) *squaddie.Squaddie {
+func (context *DefenderContext) getTarget(setup *ForecastSetup) *squaddie.Squaddie {
 	return setup.SquaddieRepo.GetOriginalSquaddieByID(context.TargetID)
 }
 
-func (context *DefenderContext) calculate(setup ForecastSetup) {
+func (context *DefenderContext) calculate(setup *ForecastSetup) {
 	context.TotalToHitPenalty = context.calculateTotalToHitPenalty(setup)
 	context.ArmorResistance = context.calculateArmorResistance(setup)
 	context.BarrierResistance = context.calculateBarrierResistance(setup)
 }
 
-func (context *DefenderContext) calculateTotalToHitPenalty(setup ForecastSetup) int {
+func (context *DefenderContext) calculateTotalToHitPenalty(setup *ForecastSetup) int {
 	attackingPower := context.getPower(setup)
 	target := context.getTarget(setup)
 
@@ -43,7 +43,7 @@ func (context *DefenderContext) calculateTotalToHitPenalty(setup ForecastSetup) 
 	return 0
 }
 
-func (context *DefenderContext) calculateArmorResistance(setup ForecastSetup) int {
+func (context *DefenderContext) calculateArmorResistance(setup *ForecastSetup) int {
 	attackingPower := context.getPower(setup)
 	target := context.getTarget(setup)
 
@@ -53,7 +53,7 @@ func (context *DefenderContext) calculateArmorResistance(setup ForecastSetup) in
 	return 0
 }
 
-func (context *DefenderContext) calculateBarrierResistance(setup ForecastSetup) int {
+func (context *DefenderContext) calculateBarrierResistance(setup *ForecastSetup) int {
 	target := context.getTarget(setup)
 	return target.Defense.CurrentBarrier
 }

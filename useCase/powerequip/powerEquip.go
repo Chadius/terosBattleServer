@@ -23,7 +23,7 @@ func GetEquippedPower (squaddie *squaddie.Squaddie, repo *power.Repository) *pow
 }
 
 // SquaddieEquipPower will make the Squaddie equip a different power.
-//   If the power is invalid, will return nil
+//   returns true upon success
 func SquaddieEquipPower(squaddie *squaddie.Squaddie, powerToEquipID string, repo *power.Repository) bool {
 	if squaddie.PowerCollection.HasPowerWithID(powerToEquipID) == false {
 		return false

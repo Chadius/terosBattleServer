@@ -17,6 +17,7 @@ func CanSquaddieCounterWithEquippedWeapon(squaddie *squaddie.Squaddie, repo *pow
 	return currentlyEquippedPower.AttackEffect.CanCounterAttack
 }
 
+// TODO delete this
 // CanTargetSquaddieCounterAttack returns true if the target can counterAttack the attacker.
 func CanTargetSquaddieCounterAttack(context *powerusagecontext.PowerUsageContext, attackContext *powerusagecontext.AttackContext) bool {
 	target := context.SquaddieRepo.GetOriginalSquaddieByID(attackContext.TargetID)

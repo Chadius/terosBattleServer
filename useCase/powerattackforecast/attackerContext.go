@@ -6,6 +6,8 @@ import "github.com/cserrant/terosBattleServer/entity/power"
 type AttackerContext struct {
 	AttackerID		string
 
+	IsCounterAttack bool
+	CounterAttackPenalty int
 	TotalToHitBonus int
 
 	RawDamage       int
@@ -25,15 +27,21 @@ func (context *AttackerContext)calculate(setup ForecastSetup) {
 	context.ExtraBarrierBurn = power.AttackEffect.ExtraBarrierBurn
 
 	context.RawDamage = context.calculateRawDamage(setup)
-	context.TotalToHitBonus = context.calculateToHitBonus(setup)
+	context.calculateToHitBonus(setup)
 
 	context.calculateCriticalHit(setup)
 }
 
-func (context *AttackerContext) calculateToHitBonus(setup ForecastSetup) int {
+func (context *AttackerContext) calculateToHitBonus(setup ForecastSetup) {
 	user := setup.SquaddieRepo.GetOriginalSquaddieByID(setup.UserID)
 	power := setup.PowerRepo.GetPowerByID(setup.PowerID)
-	return power.AttackEffect.ToHitBonus + user.Offense.Aim
+
+	context.IsCounterAttack = setup.IsCounterAttack
+	context.TotalToHitBonus = power.AttackEffect.ToHitBonus + user.Offense.Aim
+	if context.IsCounterAttack {
+		context.CounterAttackPenalty = power.AttackEffect.CounterAttackToHitPenalty
+		context.TotalToHitBonus -= context.CounterAttackPenalty
+	}
 }
 
 func (context *AttackerContext) calculateRawDamage(setup ForecastSetup) int {
