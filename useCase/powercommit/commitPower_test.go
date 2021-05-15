@@ -8,10 +8,7 @@ import (
 	"github.com/cserrant/terosBattleServer/usecase/powerequip"
 	"github.com/cserrant/terosBattleServer/utility/testutility"
 	. "gopkg.in/check.v1"
-	"testing"
 )
-
-func Test(t *testing.T) { TestingT(t) }
 
 type SquaddieCommitToPowerUsageSuite struct {
 	teros *squaddie.Squaddie

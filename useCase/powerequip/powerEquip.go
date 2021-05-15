@@ -13,13 +13,20 @@ func GetEquippedPower (squaddie *squaddie.Squaddie, repo *power.Repository) *pow
 		return repo.GetPowerByID(squaddie.PowerCollection.CurrentlyEquippedPowerID)
 	}
 
+	return nil
+}
+
+// EquipDefaultPower will automatically equip the first power the squaddie has.
+//  Returns the power and a boolean.
+func EquipDefaultPower(squaddie *squaddie.Squaddie, repo *power.Repository) (*power.Power, bool) {
 	for _, powerReference := range squaddie.PowerCollection.PowerReferences {
 		powerToCheck := repo.GetPowerByID(powerReference.ID)
 		if powerToCheck.AttackEffect != nil && powerToCheck.AttackEffect.CanBeEquipped == true {
-			return powerToCheck
+			equippingPowerWasSuccessful := SquaddieEquipPower(squaddie, powerToCheck.ID, repo)
+			return powerToCheck, equippingPowerWasSuccessful
 		}
 	}
-	return nil
+	return nil, false
 }
 
 // SquaddieEquipPower will make the Squaddie equip a different power.

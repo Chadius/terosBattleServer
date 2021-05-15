@@ -25,7 +25,9 @@ type ForecastSetup struct {
 
 // Calculation holds the results of the forecast.
 type Calculation struct {
+	Setup *ForecastSetup
 	Attack	*AttackForecast
+	CounterAttackSetup *ForecastSetup
 	CounterAttack *AttackForecast
 }
 
@@ -42,12 +44,22 @@ func (forecast *Forecast) CalculateForecast() {
 	for _, targetID := range forecast.Setup.Targets {
 		attack := forecast.CalculateAttackForecast(targetID)
 		var counterAttack *AttackForecast
+		var counterAttackSetup *ForecastSetup
 		if forecast.isCounterattackPossible(targetID) {
-			counterAttack = forecast.createCounterAttackForecast(targetID)
+			counterAttackSetup, counterAttack = forecast.createCounterAttackForecast(targetID)
 		}
 
 		calculation := Calculation{
+			Setup: &ForecastSetup{
+				UserID:          forecast.Setup.UserID,
+				PowerID:         forecast.Setup.PowerID,
+				Targets:         []string{targetID},
+				SquaddieRepo:    forecast.Setup.SquaddieRepo,
+				PowerRepo:       forecast.Setup.PowerRepo,
+				IsCounterAttack: false,
+			},
 			Attack: attack,
+			CounterAttackSetup: counterAttackSetup,
 			CounterAttack: counterAttack,
 		}
 		forecast.ForecastedResultPerTarget = append(forecast.ForecastedResultPerTarget, calculation)
@@ -62,7 +74,7 @@ func (forecast *Forecast) isCounterattackPossible(targetID string) bool {
 	return false
 }
 
-func (forecast *Forecast) createCounterAttackForecast(targetID string) *AttackForecast {
+func (forecast *Forecast) createCounterAttackForecast(targetID string) (*ForecastSetup, *AttackForecast) {
 	counterAttackingSquaddie := forecast.Setup.SquaddieRepo.GetOriginalSquaddieByID(targetID)
 	counterAttackingPowerID := counterAttackingSquaddie.PowerCollection.CurrentlyEquippedPowerID
 
@@ -81,12 +93,12 @@ func (forecast *Forecast) createCounterAttackForecast(targetID string) *AttackFo
 
 	counterAttackForecast.CalculateForecast()
 
-	return counterAttackForecast.CalculateAttackForecast(targetID)
+	return &counterForecastSetup, counterAttackForecast.CalculateAttackForecast(targetID)
 }
 
 // CalculateAttackForecast figures out what will happen when this attack power is used.
 func (forecast *Forecast) CalculateAttackForecast(targetID string) *AttackForecast {
-	attackerContext := AttackerContext{AttackerID: forecast.Setup.UserID}
+	attackerContext := AttackerContext{}
 	attackerContext.calculate(forecast.Setup)
 
 	defenderContext := DefenderContext{TargetID: targetID}

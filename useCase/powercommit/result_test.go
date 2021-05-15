@@ -1,17 +1,18 @@
-package powerattackforecast_test
+package powercommit_test
 
 import (
 	"github.com/cserrant/terosBattleServer/entity/power"
 	"github.com/cserrant/terosBattleServer/entity/squaddie"
 	"github.com/cserrant/terosBattleServer/usecase/powerattackforecast"
-	"github.com/cserrant/terosBattleServer/usecase/powerequip"
+	"github.com/cserrant/terosBattleServer/usecase/powercommit"
+	"github.com/cserrant/terosBattleServer/utility/testutility"
 	. "gopkg.in/check.v1"
 	"testing"
 )
 
 func Test(t *testing.T) { TestingT(t) }
 
-type CounterAttackCalculate struct {
+type resultOnAttack struct {
 	teros			*squaddie.Squaddie
 	bandit			*squaddie.Squaddie
 	mysticMage		*squaddie.Squaddie
@@ -25,11 +26,13 @@ type CounterAttackCalculate struct {
 
 	forecastSpearOnBandit *powerattackforecast.Forecast
 	forecastSpearOnMysticMage *powerattackforecast.Forecast
+
+	resultSpearOnBandit *powercommit.Result
 }
 
-var _ = Suite(&CounterAttackCalculate{})
+var _ = Suite(&resultOnAttack{})
 
-func (suite *CounterAttackCalculate) SetUpTest(checker *C) {
+func (suite *resultOnAttack) SetUpTest(checker *C) {
 	suite.teros = squaddie.NewSquaddie("teros")
 	suite.teros.Identification.Name = "teros"
 	suite.teros.Offense.Aim = 2
@@ -59,7 +62,6 @@ func (suite *CounterAttackCalculate) SetUpTest(checker *C) {
 	suite.fireball = power.NewPower("fireball")
 	suite.fireball.PowerType = power.Spell
 	suite.fireball.AttackEffect.DamageBonus = 3
-	suite.fireball.AttackEffect.CanBeEquipped = true
 
 	suite.squaddieRepo = squaddie.NewSquaddieRepository()
 	suite.squaddieRepo.AddSquaddies([]*squaddie.Squaddie{suite.teros, suite.bandit, suite.mysticMage})
@@ -88,36 +90,25 @@ func (suite *CounterAttackCalculate) SetUpTest(checker *C) {
 			IsCounterAttack: false,
 		},
 	}
+
+	suite.resultSpearOnBandit = &powercommit.Result{
+		Forecast: suite.forecastSpearOnBandit,
+	}
 }
 
-func (suite *CounterAttackCalculate) TestNoCounterAttackHappensIfNoEquippedPower(checker *C) {
-	suite.forecastSpearOnMysticMage.CalculateForecast()
-
-	checker.Assert(suite.forecastSpearOnMysticMage.ForecastedResultPerTarget[0].CounterAttack, IsNil)
-}
-
-func (suite *CounterAttackCalculate) TestNoCounterAttackHappensIfEquippedPowerCannotCounter(checker *C) {
-	powerAddedErrors := suite.mysticMage.PowerCollection.AddInnatePower(suite.fireball)
-	checker.Assert(powerAddedErrors, IsNil)
-
-	mysticMageEquipsFireball := powerequip.SquaddieEquipPower(suite.mysticMage, suite.fireball.ID, suite.powerRepo)
-	checker.Assert(mysticMageEquipsFireball, Equals, true)
-
-	suite.forecastSpearOnMysticMage.CalculateForecast()
-
-	checker.Assert(suite.forecastSpearOnMysticMage.ForecastedResultPerTarget[0].CounterAttack, IsNil)
-}
-
-func (suite *CounterAttackCalculate) TestCounterAttackHappensIfPossible(checker *C) {
-	suite.axe.AttackEffect.CanCounterAttack = true
-	suite.axe.AttackEffect.CounterAttackToHitPenalty = 2
-	powerAddedErrors := suite.bandit.PowerCollection.AddInnatePower(suite.axe)
-	checker.Assert(powerAddedErrors, IsNil)
-
-	banditEquipsAxe := powerequip.SquaddieEquipPower(suite.bandit, suite.axe.ID, suite.powerRepo)
-	checker.Assert(banditEquipsAxe, Equals, true)
+func (suite *resultOnAttack) TestAttackCanMiss(checker *C) {
+	suite.resultSpearOnBandit.DieRoller = &testutility.AlwaysMissDieRoller{}
 
 	suite.forecastSpearOnBandit.CalculateForecast()
+	suite.resultSpearOnBandit.Commit()
 
-	checker.Assert(suite.forecastSpearOnBandit.ForecastedResultPerTarget[0].CounterAttack.VersusContext.ToHitBonus, Equals, -1)
+	checker.Assert(suite.resultSpearOnBandit.ResultPerTarget, HasLen, 1)
+	checker.Assert(suite.resultSpearOnBandit.ResultPerTarget[0].UserID, Equals, suite.teros.Identification.ID)
+	checker.Assert(suite.resultSpearOnBandit.ResultPerTarget[0].PowerID, Equals, suite.spear.ID)
+	checker.Assert(suite.resultSpearOnBandit.ResultPerTarget[0].TargetID, Equals, suite.bandit.Identification.ID)
+	checker.Assert(suite.resultSpearOnBandit.ResultPerTarget[0].Attack.HitTarget, Equals, false)
+	checker.Assert(suite.resultSpearOnBandit.ResultPerTarget[0].Attack.CriticallyHitTarget, Equals, false)
+	checker.Assert(suite.resultSpearOnBandit.ResultPerTarget[0].Attack.Damage.DamageAbsorbedByBarrier, Equals, 0)
+	checker.Assert(suite.resultSpearOnBandit.ResultPerTarget[0].Attack.Damage.DamageAbsorbedByArmor, Equals, 0)
+	checker.Assert(suite.resultSpearOnBandit.ResultPerTarget[0].Attack.Damage.DamageDealt, Equals, 0)
 }

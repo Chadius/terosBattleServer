@@ -4,8 +4,6 @@ import "github.com/cserrant/terosBattleServer/entity/power"
 
 // AttackerContext lists the attacker's relevant information when attacking
 type AttackerContext struct {
-	AttackerID		string
-
 	IsCounterAttack bool
 	CounterAttackPenalty int
 	TotalToHitBonus int
