@@ -2,6 +2,7 @@ package powercommit
 
 import (
 	"github.com/cserrant/terosBattleServer/usecase/powerattackforecast"
+	"github.com/cserrant/terosBattleServer/usecase/powerequip"
 	"github.com/cserrant/terosBattleServer/utility"
 )
 
@@ -37,6 +38,9 @@ func (result *Result) Commit() {
 			PowerID: forecast.Setup.PowerID,
 			Attack: &AttackResult{},
 		}
+
+		attackingSquaddie := forecast.Setup.SquaddieRepo.GetOriginalSquaddieByID(forecast.Setup.UserID)
+		powerequip.SquaddieEquipPower(attackingSquaddie, forecast.Setup.PowerID, forecast.Setup.PowerRepo)
 
 		toHitChance := forecast.Attack.VersusContext.ToHitBonus
 		attackRoll, defendRoll := result.DieRoller.RollTwoDice()
