@@ -1,25 +1,19 @@
 package powerattackforecast
 
-import "github.com/cserrant/terosBattleServer/entity/power"
+import (
+	"github.com/cserrant/terosBattleServer/entity/damagedistribution"
+	"github.com/cserrant/terosBattleServer/entity/power"
+)
 
 // VersusContext stores the results of an AttackerContext and DefenderContext.
 type VersusContext struct {
 	ToHitBonus int
 
-	NormalDamage *DamageDistribution
-	CriticalHitDamage *DamageDistribution
+	NormalDamage *damagedistribution.DamageDistribution
+	CriticalHitDamage *damagedistribution.DamageDistribution
 
 	CanCritical bool
 	CriticalHitThreshold int
-}
-
-// DamageDistribution tracks how damage is distributed.
-type DamageDistribution struct {
-	DamageAbsorbedByArmor   int
-	DamageAbsorbedByBarrier int
-	DamageDealt             int
-	ExtraBarrierBurnt int
-	TotalBarrierBurnt int
 }
 
 func (context *VersusContext) calculate(attackerContext AttackerContext, defenderContext DefenderContext) {
@@ -44,8 +38,8 @@ func (context *VersusContext) setCriticalDamageBreakdown(attackerContext Attacke
 	}
 }
 
-func (context *VersusContext) setDamageBreakdown(damageDealtToTarget int, attackerContext AttackerContext, defenderContext DefenderContext) *DamageDistribution {
-	distribution := &DamageDistribution{}
+func (context *VersusContext) setDamageBreakdown(damageDealtToTarget int, attackerContext AttackerContext, defenderContext DefenderContext) *damagedistribution.DamageDistribution {
+	distribution := &damagedistribution.DamageDistribution{}
 
 	context.setBarrierBurntAndDamageAbsorbed(distribution, attackerContext, defenderContext, damageDealtToTarget)
 
@@ -68,12 +62,11 @@ func (context *VersusContext) calculateDamageAbsorbedByArmor(attackerContext Att
 	armorAbsorbsAllDamage := damageDealtToTarget <= defenderContext.ArmorResistance
 	if armorAbsorbsAllDamage {
 		return damageDealtToTarget
-	} else {
-		return defenderContext.ArmorResistance
 	}
+	return defenderContext.ArmorResistance
 }
 
-func (context *VersusContext) setBarrierBurntAndDamageAbsorbed(distribution *DamageDistribution, attackerContext AttackerContext, defenderContext DefenderContext, damageDealtToTarget int) {
+func (context *VersusContext) setBarrierBurntAndDamageAbsorbed(distribution *damagedistribution.DamageDistribution, attackerContext AttackerContext, defenderContext DefenderContext, damageDealtToTarget int) {
 	barrierAbsorbsAllDamageAndExtraBurn := damageDealtToTarget + attackerContext.ExtraBarrierBurn <= defenderContext.BarrierResistance
 	if barrierAbsorbsAllDamageAndExtraBurn {
 		distribution.ExtraBarrierBurnt = attackerContext.ExtraBarrierBurn

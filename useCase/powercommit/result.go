@@ -1,6 +1,7 @@
 package powercommit
 
 import (
+	"github.com/cserrant/terosBattleServer/entity/damagedistribution"
 	"github.com/cserrant/terosBattleServer/usecase/powerattackforecast"
 	"github.com/cserrant/terosBattleServer/usecase/powerequip"
 	"github.com/cserrant/terosBattleServer/utility"
@@ -26,36 +27,41 @@ type ResultPerTarget struct {
 type AttackResult struct {
 	HitTarget           bool
 	CriticallyHitTarget bool
-	Damage *powerattackforecast.DamageDistribution
+	Damage *damagedistribution.DamageDistribution
 }
 
 // Commit tries to use the power and records the effects.
 func (result *Result) Commit() {
-	for _, forecast := range result.Forecast.ForecastedResultPerTarget {
+	for _, calculation := range result.Forecast.ForecastedResultPerTarget {
 		resultPerTarget := &ResultPerTarget{
-			UserID: forecast.Setup.UserID,
-			TargetID: forecast.Setup.Targets[0],
-			PowerID: forecast.Setup.PowerID,
-			Attack: &AttackResult{},
+			UserID:   calculation.Setup.UserID,
+			TargetID: calculation.Setup.Targets[0],
+			PowerID:  calculation.Setup.PowerID,
+			Attack:   &AttackResult{},
 		}
 
-		attackingSquaddie := forecast.Setup.SquaddieRepo.GetOriginalSquaddieByID(forecast.Setup.UserID)
-		powerequip.SquaddieEquipPower(attackingSquaddie, forecast.Setup.PowerID, forecast.Setup.PowerRepo)
+		attackingSquaddie := calculation.Setup.SquaddieRepo.GetOriginalSquaddieByID(calculation.Setup.UserID)
+		powerequip.SquaddieEquipPower(attackingSquaddie, calculation.Setup.PowerID, calculation.Setup.PowerRepo)
 
-		toHitChance := forecast.Attack.VersusContext.ToHitBonus
+		toHitChance := calculation.Attack.VersusContext.ToHitBonus
 		attackRoll, defendRoll := result.DieRoller.RollTwoDice()
 		resultPerTarget.Attack.HitTarget = attackRoll + toHitChance >= defendRoll
 
 		if !resultPerTarget.Attack.HitTarget {
-			resultPerTarget.Attack.Damage = &powerattackforecast.DamageDistribution{
+			resultPerTarget.Attack.Damage = &damagedistribution.DamageDistribution{
 				DamageAbsorbedByArmor:   0,
 				DamageAbsorbedByBarrier: 0,
 				DamageDealt:             0,
 				ExtraBarrierBurnt:       0,
 				TotalBarrierBurnt:       0,
 			}
+		} else {
+			resultPerTarget.Attack.Damage = calculation.Attack.VersusContext.NormalDamage
 		}
 
 		result.ResultPerTarget = append(result.ResultPerTarget, resultPerTarget)
+
+		targetSquaddie := calculation.Setup.SquaddieRepo.GetOriginalSquaddieByID(resultPerTarget.TargetID)
+		targetSquaddie.Defense.TakeDamageDistribution(resultPerTarget.Attack.Damage)
 	}
 }

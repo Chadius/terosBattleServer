@@ -192,11 +192,15 @@ func (suite *resultOnAttack) TestAttackCanHitButNotCritically(checker *C) {
 	checker.Assert(suite.resultBlotOnBandit.ResultPerTarget[0].PowerID, Equals, suite.blot.ID)
 	checker.Assert(suite.resultBlotOnBandit.ResultPerTarget[0].Attack.HitTarget, Equals, true)
 	checker.Assert(suite.resultBlotOnBandit.ResultPerTarget[0].Attack.CriticallyHitTarget, Equals, false)
-	// TODO Attack.Damage is nil, it shouldn't be
 	checker.Assert(suite.resultBlotOnBandit.ResultPerTarget[0].Attack.Damage.DamageAbsorbedByBarrier, Equals, 3)
 	checker.Assert(suite.resultBlotOnBandit.ResultPerTarget[0].Attack.Damage.DamageAbsorbedByArmor, Equals, 0)
 	checker.Assert(suite.resultBlotOnBandit.ResultPerTarget[0].Attack.Damage.DamageDealt, Equals, 2)
-	// TODO bandit should take DamageDealt HP in damage
+
+	checker.Assert(
+		suite.bandit.Defense.CurrentHitPoints,
+		Equals,
+		suite.bandit.Defense.MaxHitPoints - suite.resultBlotOnBandit.ResultPerTarget[0].Attack.Damage.DamageDealt,
+	)
 }
 
 type EquipPowerWhenCommitting struct {

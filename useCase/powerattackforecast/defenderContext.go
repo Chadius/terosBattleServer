@@ -2,7 +2,6 @@ package powerattackforecast
 
 import (
 	"github.com/cserrant/terosBattleServer/entity/power"
-	"github.com/cserrant/terosBattleServer/entity/squaddie"
 )
 
 // DefenderContext lists the target's relevant information when under attack
@@ -19,10 +18,6 @@ func (context *DefenderContext) getPower(setup *ForecastSetup) *power.Power {
 	return setup.PowerRepo.GetPowerByID(setup.PowerID)
 }
 
-func (context *DefenderContext) getTarget(setup *ForecastSetup) *squaddie.Squaddie {
-	return setup.SquaddieRepo.GetOriginalSquaddieByID(context.TargetID)
-}
-
 func (context *DefenderContext) calculate(setup *ForecastSetup) {
 	context.TotalToHitPenalty = context.calculateTotalToHitPenalty(setup)
 	context.ArmorResistance = context.calculateArmorResistance(setup)
@@ -31,7 +26,7 @@ func (context *DefenderContext) calculate(setup *ForecastSetup) {
 
 func (context *DefenderContext) calculateTotalToHitPenalty(setup *ForecastSetup) int {
 	attackingPower := context.getPower(setup)
-	target := context.getTarget(setup)
+	target := setup.SquaddieRepo.GetOriginalSquaddieByID(context.TargetID)
 
 	if attackingPower.PowerType == power.Physical {
 		return target.Defense.Dodge
@@ -45,7 +40,7 @@ func (context *DefenderContext) calculateTotalToHitPenalty(setup *ForecastSetup)
 
 func (context *DefenderContext) calculateArmorResistance(setup *ForecastSetup) int {
 	attackingPower := context.getPower(setup)
-	target := context.getTarget(setup)
+	target := setup.SquaddieRepo.GetOriginalSquaddieByID(context.TargetID)
 
 	if attackingPower.PowerType == power.Physical {
 		return target.Defense.Armor
@@ -54,6 +49,6 @@ func (context *DefenderContext) calculateArmorResistance(setup *ForecastSetup) i
 }
 
 func (context *DefenderContext) calculateBarrierResistance(setup *ForecastSetup) int {
-	target := context.getTarget(setup)
+	target := setup.SquaddieRepo.GetOriginalSquaddieByID(context.TargetID)
 	return target.Defense.CurrentBarrier
 }
