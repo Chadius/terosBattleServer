@@ -111,9 +111,11 @@ func (suite *resultOnAttack) SetUpTest(checker *C) {
 			UserID:          suite.teros.Identification.ID,
 			PowerID:         suite.spear.ID,
 			Targets:         []string{suite.bandit.Identification.ID},
+			IsCounterAttack: false,
+		},
+		Repositories: &powerusagescenario.RepositoryCollection{
 			SquaddieRepo:    suite.squaddieRepo,
 			PowerRepo:       suite.powerRepo,
-			IsCounterAttack: false,
 		},
 	}
 	suite.resultSpearOnBandit = &powercommit.Result{
@@ -125,9 +127,11 @@ func (suite *resultOnAttack) SetUpTest(checker *C) {
 			UserID:          suite.teros.Identification.ID,
 			PowerID:         suite.blot.ID,
 			Targets:         []string{suite.bandit.Identification.ID},
+			IsCounterAttack: false,
+		},
+		Repositories: &powerusagescenario.RepositoryCollection{
 			SquaddieRepo:    suite.squaddieRepo,
 			PowerRepo:       suite.powerRepo,
-			IsCounterAttack: false,
 		},
 	}
 	suite.resultBlotOnBandit = &powercommit.Result{
@@ -139,9 +143,11 @@ func (suite *resultOnAttack) SetUpTest(checker *C) {
 			UserID:          suite.teros.Identification.ID,
 			PowerID:         suite.spear.ID,
 			Targets:         []string{suite.mysticMage.Identification.ID},
+			IsCounterAttack: false,
+		},
+		Repositories: &powerusagescenario.RepositoryCollection{
 			SquaddieRepo:    suite.squaddieRepo,
 			PowerRepo:       suite.powerRepo,
-			IsCounterAttack: false,
 		},
 	}
 
@@ -150,9 +156,11 @@ func (suite *resultOnAttack) SetUpTest(checker *C) {
 			UserID:          suite.mysticMage.Identification.ID,
 			PowerID:         suite.fireball.ID,
 			Targets:         []string{suite.bandit.Identification.ID},
+			IsCounterAttack: false,
+		},
+		Repositories: &powerusagescenario.RepositoryCollection{
 			SquaddieRepo:    suite.squaddieRepo,
 			PowerRepo:       suite.powerRepo,
-			IsCounterAttack: false,
 		},
 	}
 	suite.resultFireballOnBandit = &powercommit.Result{
@@ -352,9 +360,11 @@ func (suite *EquipPowerWhenCommitting) SetUpTest(checker *C) {
 			UserID:          suite.teros.Identification.ID,
 			PowerID:         suite.spear.ID,
 			Targets:         []string{suite.bandit.Identification.ID},
+			IsCounterAttack: false,
+		},
+		Repositories: &powerusagescenario.RepositoryCollection{
 			SquaddieRepo:    suite.squaddieRepo,
 			PowerRepo:       suite.powerRepo,
-			IsCounterAttack: false,
 		},
 	}
 	suite.resultSpearOnBandit = &powercommit.Result{
@@ -366,9 +376,11 @@ func (suite *EquipPowerWhenCommitting) SetUpTest(checker *C) {
 			UserID:          suite.teros.Identification.ID,
 			PowerID:         suite.blot.ID,
 			Targets:         []string{suite.bandit.Identification.ID},
+			IsCounterAttack: false,
+		},
+		Repositories: &powerusagescenario.RepositoryCollection{
 			SquaddieRepo:    suite.squaddieRepo,
 			PowerRepo:       suite.powerRepo,
-			IsCounterAttack: false,
 		},
 	}
 	suite.resultBlotOnBandit = &powercommit.Result{
@@ -380,9 +392,11 @@ func (suite *EquipPowerWhenCommitting) SetUpTest(checker *C) {
 			UserID:          suite.mysticMage.Identification.ID,
 			PowerID:         suite.fireball.ID,
 			Targets:         []string{suite.bandit.Identification.ID},
+			IsCounterAttack: false,
+		},
+		Repositories: &powerusagescenario.RepositoryCollection{
 			SquaddieRepo:    suite.squaddieRepo,
 			PowerRepo:       suite.powerRepo,
-			IsCounterAttack: false,
 		},
 	}
 	suite.resultFireballOnBandit = &powercommit.Result{

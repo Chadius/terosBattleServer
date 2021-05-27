@@ -28,13 +28,15 @@ func main() {
 		UserID:          attacker.Identification.ID,
 		PowerID:         power.ID,
 		Targets:         []string{target.Identification.ID},
-		SquaddieRepo:    squaddieRepo,
-		PowerRepo:       powerRepo,
 		IsCounterAttack: false,
 	}
 
 	powerForecast := &powerattackforecast.Forecast{
 		Setup: powerSetup,
+		Repositories: &powerusagescenario.RepositoryCollection{
+			SquaddieRepo:    squaddieRepo,
+			PowerRepo:       powerRepo,
+		},
 	}
 	powerForecast.CalculateForecast()
 
@@ -50,22 +52,22 @@ func main() {
 	powerResult.Commit()
 
 	for _, attackReport := range powerResult.ResultPerTarget {
-		printAttackReport(attackReport, &powerSetup)
+		printAttackReport(attackReport, powerForecast.Repositories)
 	}
 }
 
 func printAttackForecast(forecast *powerattackforecast.Calculation) {
-	printPartOfAttackForecast(forecast.Attack, forecast.Setup)
+	printPartOfAttackForecast(forecast.Attack, forecast.Setup, forecast.Repositories)
 	if forecast.CounterAttack != nil {
 		println("")
 		println("Counterattack:")
-		printPartOfAttackForecast(forecast.CounterAttack, forecast.CounterAttackSetup)
+		printPartOfAttackForecast(forecast.CounterAttack, forecast.CounterAttackSetup, forecast.Repositories)
 	}
 }
 
-func printPartOfAttackForecast(forecast *powerattackforecast.AttackForecast, setup *powerusagescenario.Setup) {
-	squaddieRepo := setup.SquaddieRepo
-	powerRepo := setup.PowerRepo
+func printPartOfAttackForecast(forecast *powerattackforecast.AttackForecast, setup *powerusagescenario.Setup, repositories *powerusagescenario.RepositoryCollection) {
+	squaddieRepo := repositories.SquaddieRepo
+	powerRepo := repositories.PowerRepo
 
 	attacker := squaddieRepo.GetOriginalSquaddieByID(setup.UserID)
 	target := squaddieRepo.GetOriginalSquaddieByID(setup.Targets[0])
@@ -82,9 +84,9 @@ func printPartOfAttackForecast(forecast *powerattackforecast.AttackForecast, set
 	println("Expected barrier damage   ", forecast.VersusContext.NormalDamage.TotalBarrierBurnt * hitChance)
 }
 
-func printAttackReport(result *powercommit.ResultPerTarget, setup *powerusagescenario.Setup) {
-	squaddieRepo := setup.SquaddieRepo
-	powerRepo := setup.PowerRepo
+func printAttackReport(result *powercommit.ResultPerTarget, repositories *powerusagescenario.RepositoryCollection) {
+	squaddieRepo := repositories.SquaddieRepo
+	powerRepo := repositories.PowerRepo
 
 	attacker := squaddieRepo.GetOriginalSquaddieByID(result.UserID)
 	target := squaddieRepo.GetOriginalSquaddieByID(result.TargetID)

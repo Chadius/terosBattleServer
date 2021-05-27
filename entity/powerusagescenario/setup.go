@@ -10,8 +10,11 @@ type Setup struct {
 	UserID          string
 	PowerID         string
 	Targets         []string
-	SquaddieRepo    *squaddie.Repository
-	PowerRepo       *power.Repository
 	IsCounterAttack bool
 }
 
+// RepositoryCollection holds all of the repositories used in the setup.
+type RepositoryCollection struct {
+	SquaddieRepo    *squaddie.Repository
+	PowerRepo       *power.Repository
+}

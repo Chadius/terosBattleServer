@@ -9,11 +9,13 @@ import (
 //  uses a given power. It can be asked multiple questions.
 type Forecast struct {
 	Setup                     powerusagescenario.Setup
+	Repositories *powerusagescenario.RepositoryCollection
 	ForecastedResultPerTarget []Calculation
 }
 
 // Calculation holds the results of the forecast.
 type Calculation struct {
+	Repositories *powerusagescenario.RepositoryCollection
 	Setup *powerusagescenario.Setup
 	Attack	*AttackForecast
 	CounterAttackSetup *powerusagescenario.Setup
@@ -43,9 +45,11 @@ func (forecast *Forecast) CalculateForecast() {
 				UserID:          forecast.Setup.UserID,
 				PowerID:         forecast.Setup.PowerID,
 				Targets:         []string{targetID},
-				SquaddieRepo:    forecast.Setup.SquaddieRepo,
-				PowerRepo:       forecast.Setup.PowerRepo,
 				IsCounterAttack: false,
+			},
+			Repositories: &powerusagescenario.RepositoryCollection{
+				SquaddieRepo:    forecast.Repositories.SquaddieRepo,
+				PowerRepo:       forecast.Repositories.PowerRepo,
 			},
 			Attack: attack,
 			CounterAttackSetup: counterAttackSetup,
@@ -56,15 +60,15 @@ func (forecast *Forecast) CalculateForecast() {
 }
 
 func (forecast *Forecast) isCounterattackPossible(targetID string) bool {
-	squaddieThatWantsToCounter := forecast.Setup.SquaddieRepo.GetOriginalSquaddieByID(targetID)
-	if forecast.Setup.IsCounterAttack == false && powerequip.CanSquaddieCounterWithEquippedWeapon(squaddieThatWantsToCounter, forecast.Setup.PowerRepo) {
+	squaddieThatWantsToCounter := forecast.Repositories.SquaddieRepo.GetOriginalSquaddieByID(targetID)
+	if forecast.Setup.IsCounterAttack == false && powerequip.CanSquaddieCounterWithEquippedWeapon(squaddieThatWantsToCounter, forecast.Repositories.PowerRepo) {
 		return true
 	}
 	return false
 }
 
 func (forecast *Forecast) createCounterAttackForecast(counterAttackingSquaddieID string) (*powerusagescenario.Setup, *AttackForecast) {
-	counterAttackingSquaddie := forecast.Setup.SquaddieRepo.GetOriginalSquaddieByID(counterAttackingSquaddieID)
+	counterAttackingSquaddie := forecast.Repositories.SquaddieRepo.GetOriginalSquaddieByID(counterAttackingSquaddieID)
 	counterAttackingPowerID := counterAttackingSquaddie.PowerCollection.CurrentlyEquippedPowerID
 	counterAttackingTargetID := forecast.Setup.UserID
 
@@ -72,13 +76,15 @@ func (forecast *Forecast) createCounterAttackForecast(counterAttackingSquaddieID
 		UserID:          counterAttackingSquaddieID,
 		PowerID:         counterAttackingPowerID,
 		Targets:         []string{counterAttackingTargetID},
-		SquaddieRepo:    forecast.Setup.SquaddieRepo,
-		PowerRepo:       forecast.Setup.PowerRepo,
 		IsCounterAttack: true,
 	}
 
 	counterAttackForecast := Forecast{
 		Setup:                     counterForecastSetup,
+		Repositories: &powerusagescenario.RepositoryCollection{
+			SquaddieRepo:    forecast.Repositories.SquaddieRepo,
+			PowerRepo:       forecast.Repositories.PowerRepo,
+		},
 	}
 
 	counterAttackForecast.CalculateForecast()
@@ -89,10 +95,10 @@ func (forecast *Forecast) createCounterAttackForecast(counterAttackingSquaddieID
 // CalculateAttackForecast figures out what will happen when this attack power is used.
 func (forecast *Forecast) CalculateAttackForecast(targetID string) *AttackForecast {
 	attackerContext := AttackerContext{}
-	attackerContext.calculate(forecast.Setup)
+	attackerContext.calculate(forecast.Setup, forecast.Repositories)
 
 	defenderContext := DefenderContext{TargetID: targetID}
-	defenderContext.calculate(&forecast.Setup)
+	defenderContext.calculate(&forecast.Setup, forecast.Repositories)
 
 	versusContext := VersusContext{}
 	versusContext.calculate(attackerContext, defenderContext)

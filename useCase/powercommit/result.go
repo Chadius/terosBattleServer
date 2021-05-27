@@ -35,15 +35,15 @@ type AttackResult struct {
 // Commit tries to use the power and records the effects.
 func (result *Result) Commit() {
 	for _, calculation := range result.Forecast.ForecastedResultPerTarget {
-		result.calculateResultForThisTarget(calculation.Setup, calculation.Attack)
+		result.calculateResultForThisTarget(calculation.Setup, calculation.Attack, result.Forecast.Repositories)
 
 		if calculation.CounterAttack != nil {
-			result.calculateResultForThisTarget(calculation.CounterAttackSetup, calculation.CounterAttack)
+			result.calculateResultForThisTarget(calculation.CounterAttackSetup, calculation.CounterAttack, result.Forecast.Repositories)
 		}
 	}
 }
 
-func (result *Result) calculateResultForThisTarget(setup *powerusagescenario.Setup, attack *powerattackforecast.AttackForecast) *ResultPerTarget {
+func (result *Result) calculateResultForThisTarget(setup *powerusagescenario.Setup, attack *powerattackforecast.AttackForecast, repositories *powerusagescenario.RepositoryCollection) *ResultPerTarget {
 	results := &ResultPerTarget{
 		UserID:   setup.UserID,
 		TargetID: setup.Targets[0],
@@ -51,8 +51,8 @@ func (result *Result) calculateResultForThisTarget(setup *powerusagescenario.Set
 		Attack:   &AttackResult{},
 	}
 
-	attackingSquaddie := setup.SquaddieRepo.GetOriginalSquaddieByID(setup.UserID)
-	powerequip.SquaddieEquipPower(attackingSquaddie, setup.PowerID, setup.PowerRepo)
+	attackingSquaddie := repositories.SquaddieRepo.GetOriginalSquaddieByID(setup.UserID)
+	powerequip.SquaddieEquipPower(attackingSquaddie, setup.PowerID, repositories.PowerRepo)
 
 	toHitChance := attack.VersusContext.ToHitBonus
 	attackRoll, defendRoll := result.DieRoller.RollTwoDice()
@@ -81,7 +81,7 @@ func (result *Result) calculateResultForThisTarget(setup *powerusagescenario.Set
 
 	result.ResultPerTarget = append(result.ResultPerTarget, results)
 
-	targetSquaddie := setup.SquaddieRepo.GetOriginalSquaddieByID(results.TargetID)
+	targetSquaddie := repositories.SquaddieRepo.GetOriginalSquaddieByID(results.TargetID)
 	targetSquaddie.Defense.TakeDamageDistribution(results.Attack.Damage)
 
 	return results

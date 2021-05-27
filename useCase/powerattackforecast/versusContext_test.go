@@ -66,9 +66,11 @@ func (suite *VersusContext) SetUpTest(checker *C) {
 			UserID:          suite.teros.Identification.ID,
 			PowerID:         suite.spear.ID,
 			Targets:         []string{suite.bandit.Identification.ID},
+			IsCounterAttack: false,
+		},
+		Repositories: &powerusagescenario.RepositoryCollection{
 			SquaddieRepo:    suite.squaddieRepo,
 			PowerRepo:       suite.powerRepo,
-			IsCounterAttack: false,
 		},
 	}
 
@@ -77,9 +79,11 @@ func (suite *VersusContext) SetUpTest(checker *C) {
 			UserID:          suite.teros.Identification.ID,
 			PowerID:         suite.blot.ID,
 			Targets:         []string{suite.bandit.Identification.ID},
+			IsCounterAttack: false,
+		},
+		Repositories: &powerusagescenario.RepositoryCollection{
 			SquaddieRepo:    suite.squaddieRepo,
 			PowerRepo:       suite.powerRepo,
-			IsCounterAttack: false,
 		},
 	}
 }

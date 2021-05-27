@@ -15,19 +15,19 @@ type DefenderContext struct {
 	BarrierResistance int
 }
 
-func (context *DefenderContext) getPower(setup *powerusagescenario.Setup) *power.Power {
-	return setup.PowerRepo.GetPowerByID(setup.PowerID)
+func (context *DefenderContext) getPower(setup *powerusagescenario.Setup, repositories *powerusagescenario.RepositoryCollection) *power.Power {
+	return repositories.PowerRepo.GetPowerByID(setup.PowerID)
 }
 
-func (context *DefenderContext) calculate(setup *powerusagescenario.Setup) {
-	context.TotalToHitPenalty = context.calculateTotalToHitPenalty(setup)
-	context.ArmorResistance = context.calculateArmorResistance(setup)
-	context.BarrierResistance = context.calculateBarrierResistance(setup)
+func (context *DefenderContext) calculate(setup *powerusagescenario.Setup, repositories *powerusagescenario.RepositoryCollection) {
+	context.TotalToHitPenalty = context.calculateTotalToHitPenalty(setup, repositories)
+	context.ArmorResistance = context.calculateArmorResistance(setup, repositories)
+	context.BarrierResistance = context.calculateBarrierResistance(repositories)
 }
 
-func (context *DefenderContext) calculateTotalToHitPenalty(setup *powerusagescenario.Setup) int {
-	attackingPower := context.getPower(setup)
-	target := setup.SquaddieRepo.GetOriginalSquaddieByID(context.TargetID)
+func (context *DefenderContext) calculateTotalToHitPenalty(setup *powerusagescenario.Setup, repositories *powerusagescenario.RepositoryCollection) int {
+	attackingPower := context.getPower(setup, repositories)
+	target := repositories.SquaddieRepo.GetOriginalSquaddieByID(context.TargetID)
 
 	if attackingPower.PowerType == power.Physical {
 		return target.Defense.Dodge
@@ -39,9 +39,9 @@ func (context *DefenderContext) calculateTotalToHitPenalty(setup *powerusagescen
 	return 0
 }
 
-func (context *DefenderContext) calculateArmorResistance(setup *powerusagescenario.Setup) int {
-	attackingPower := context.getPower(setup)
-	target := setup.SquaddieRepo.GetOriginalSquaddieByID(context.TargetID)
+func (context *DefenderContext) calculateArmorResistance(setup *powerusagescenario.Setup, repositories *powerusagescenario.RepositoryCollection) int {
+	attackingPower := context.getPower(setup, repositories)
+	target := repositories.SquaddieRepo.GetOriginalSquaddieByID(context.TargetID)
 
 	if attackingPower.PowerType == power.Physical {
 		return target.Defense.Armor
@@ -49,7 +49,7 @@ func (context *DefenderContext) calculateArmorResistance(setup *powerusagescenar
 	return 0
 }
 
-func (context *DefenderContext) calculateBarrierResistance(setup *powerusagescenario.Setup) int {
-	target := setup.SquaddieRepo.GetOriginalSquaddieByID(context.TargetID)
+func (context *DefenderContext) calculateBarrierResistance(repositories *powerusagescenario.RepositoryCollection) int {
+	target := repositories.SquaddieRepo.GetOriginalSquaddieByID(context.TargetID)
 	return target.Defense.CurrentBarrier
 }
