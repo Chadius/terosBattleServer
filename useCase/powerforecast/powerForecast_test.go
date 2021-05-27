@@ -18,6 +18,7 @@ type CalculateExpectedDamageFromAttackSuite struct {
 	bandit2			*squaddie.Squaddie
 	spear			*power.Power
 	blot			*power.Power
+	axe				*power.Power
 
 	powerRepo 		*power.Repository
 	squaddieRepo 	*squaddie.Repository
@@ -35,6 +36,9 @@ func (suite *CalculateExpectedDamageFromAttackSuite) SetUpTest(checker *C) {
 	suite.blot = power.NewPower("blot")
 	suite.blot.PowerType = power.Spell
 
+	suite.axe = power.NewPower("axe")
+	suite.axe.PowerType = power.Physical
+
 	suite.bandit = squaddie.NewSquaddie("bandit")
 	suite.bandit.Identification.Name = "bandit"
 
@@ -45,7 +49,7 @@ func (suite *CalculateExpectedDamageFromAttackSuite) SetUpTest(checker *C) {
 	suite.squaddieRepo.AddSquaddies([]*squaddie.Squaddie{suite.teros, suite.bandit, suite.bandit2})
 
 	suite.powerRepo = power.NewPowerRepository()
-	suite.powerRepo.AddSlicePowerSource([]*power.Power{suite.spear, suite.blot})
+	suite.powerRepo.AddSlicePowerSource([]*power.Power{suite.spear, suite.blot, suite.axe})
 }
 
 func (suite *CalculateExpectedDamageFromAttackSuite) TestCalculateAttackerHitBonus(checker *C) {
@@ -406,6 +410,59 @@ func (suite *CalculateExpectedDamageFromAttackSuite) TestSummaryIgnoresCriticalI
 	checker.Assert(attackingPowerSummary.CriticalBarrierDamageTaken, Equals, 0)
 	checker.Assert(attackingPowerSummary.CriticalExpectedDamage, Equals, 0)
 	checker.Assert(attackingPowerSummary.CriticalExpectedBarrierDamage, Equals, 0)
+}
+
+func (suite *CalculateExpectedDamageFromAttackSuite) TestCounterAttacks(checker *C) {
+	suite.bandit.Defense.Armor = 1
+	suite.bandit.Defense.Dodge = 1
+	suite.bandit.Offense.Strength = 3
+	suite.bandit.Offense.Aim = 12
+
+	suite.axe.AttackEffect.CanCounterAttack = true
+	suite.axe.AttackEffect.CanBeEquipped = true
+	powerequip.LoadAllOfSquaddieInnatePowers(
+		suite.bandit,
+		[]*power.Reference{
+			suite.axe.GetReference(),
+		},
+		suite.powerRepo,
+	)
+	powerequip.SquaddieEquipPower(suite.bandit, suite.axe.ID, suite.powerRepo)
+
+	suite.teros.Offense.Strength = 1
+	suite.teros.Defense.Armor = 0
+	suite.teros.Defense.Dodge = 0
+
+	attackingPowerSummary := powerforecast.GetExpectedDamage(
+		&powerusagecontext.PowerUsageContext{
+			SquaddieRepo:      suite.squaddieRepo,
+			ActingSquaddieID:  suite.teros.Identification.ID,
+			TargetSquaddieIDs: []string{suite.bandit.Identification.ID},
+			PowerID:           suite.spear.ID,
+			PowerRepo:         suite.powerRepo,
+		},
+		&powerusagecontext.AttackContext{
+			PowerID:           suite.spear.ID,
+			AttackerID:        suite.teros.Identification.ID,
+			TargetID:          suite.bandit.Identification.ID,
+			IsCounterAttack: false,
+		},
+	)
+	checker.Assert(attackingPowerSummary.AttackingSquaddieID, Equals, suite.teros.Identification.ID)
+	checker.Assert(attackingPowerSummary.PowerID, Equals, suite.spear.ID)
+	checker.Assert(attackingPowerSummary.TargetSquaddieID, Equals, suite.bandit.Identification.ID)
+	checker.Assert(attackingPowerSummary.IsACounterAttack, Equals, false)
+
+	checker.Assert(attackingPowerSummary.CounterAttack, NotNil)
+	checker.Assert(attackingPowerSummary.CounterAttack.AttackingSquaddieID, Equals, suite.bandit.Identification.ID)
+	checker.Assert(attackingPowerSummary.CounterAttack.PowerID, Equals, suite.axe.ID)
+	checker.Assert(attackingPowerSummary.CounterAttack.TargetSquaddieID, Equals, suite.teros.Identification.ID)
+	checker.Assert(attackingPowerSummary.CounterAttack.IsACounterAttack, Equals, true)
+	checker.Assert(attackingPowerSummary.CounterAttack.ChanceToHit, Equals, 36)
+	checker.Assert(attackingPowerSummary.CounterAttack.DamageTaken, Equals, 3)
+	checker.Assert(attackingPowerSummary.CounterAttack.ExpectedDamage, Equals, 108)
+	checker.Assert(attackingPowerSummary.CounterAttack.BarrierDamageTaken, Equals, 0)
+	checker.Assert(attackingPowerSummary.CounterAttack.ExpectedBarrierDamage, Equals, 0)
 }
 
 type SquaddieGainsPowerSuite struct {

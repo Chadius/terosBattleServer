@@ -74,14 +74,15 @@ func (forecast *Forecast) isCounterattackPossible(targetID string) bool {
 	return false
 }
 
-func (forecast *Forecast) createCounterAttackForecast(targetID string) (*ForecastSetup, *AttackForecast) {
-	counterAttackingSquaddie := forecast.Setup.SquaddieRepo.GetOriginalSquaddieByID(targetID)
+func (forecast *Forecast) createCounterAttackForecast(counterAttackingSquaddieID string) (*ForecastSetup, *AttackForecast) {
+	counterAttackingSquaddie := forecast.Setup.SquaddieRepo.GetOriginalSquaddieByID(counterAttackingSquaddieID)
 	counterAttackingPowerID := counterAttackingSquaddie.PowerCollection.CurrentlyEquippedPowerID
+	counterAttackingTargetID := forecast.Setup.UserID
 
 	counterForecastSetup := ForecastSetup{
-		UserID:          targetID,
+		UserID:          counterAttackingSquaddieID,
 		PowerID:         counterAttackingPowerID,
-		Targets:         []string{forecast.Setup.UserID},
+		Targets:         []string{counterAttackingTargetID},
 		SquaddieRepo:    forecast.Setup.SquaddieRepo,
 		PowerRepo:       forecast.Setup.PowerRepo,
 		IsCounterAttack: true,
@@ -93,7 +94,7 @@ func (forecast *Forecast) createCounterAttackForecast(targetID string) (*Forecas
 
 	counterAttackForecast.CalculateForecast()
 
-	return &counterForecastSetup, counterAttackForecast.CalculateAttackForecast(targetID)
+	return &counterForecastSetup, counterAttackForecast.CalculateAttackForecast(counterAttackingTargetID)
 }
 
 // CalculateAttackForecast figures out what will happen when this attack power is used.

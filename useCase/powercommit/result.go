@@ -33,35 +33,52 @@ type AttackResult struct {
 // Commit tries to use the power and records the effects.
 func (result *Result) Commit() {
 	for _, calculation := range result.Forecast.ForecastedResultPerTarget {
-		resultPerTarget := &ResultPerTarget{
-			UserID:   calculation.Setup.UserID,
-			TargetID: calculation.Setup.Targets[0],
-			PowerID:  calculation.Setup.PowerID,
-			Attack:   &AttackResult{},
+		result.calculateResultForThisTarget(calculation.Setup, calculation.Attack)
+
+		if calculation.CounterAttack != nil {
+			result.calculateResultForThisTarget(calculation.CounterAttackSetup, calculation.CounterAttack)
 		}
-
-		attackingSquaddie := calculation.Setup.SquaddieRepo.GetOriginalSquaddieByID(calculation.Setup.UserID)
-		powerequip.SquaddieEquipPower(attackingSquaddie, calculation.Setup.PowerID, calculation.Setup.PowerRepo)
-
-		toHitChance := calculation.Attack.VersusContext.ToHitBonus
-		attackRoll, defendRoll := result.DieRoller.RollTwoDice()
-		resultPerTarget.Attack.HitTarget = attackRoll + toHitChance >= defendRoll
-
-		if !resultPerTarget.Attack.HitTarget {
-			resultPerTarget.Attack.Damage = &damagedistribution.DamageDistribution{
-				DamageAbsorbedByArmor:   0,
-				DamageAbsorbedByBarrier: 0,
-				DamageDealt:             0,
-				ExtraBarrierBurnt:       0,
-				TotalBarrierBurnt:       0,
-			}
-		} else {
-			resultPerTarget.Attack.Damage = calculation.Attack.VersusContext.NormalDamage
-		}
-
-		result.ResultPerTarget = append(result.ResultPerTarget, resultPerTarget)
-
-		targetSquaddie := calculation.Setup.SquaddieRepo.GetOriginalSquaddieByID(resultPerTarget.TargetID)
-		targetSquaddie.Defense.TakeDamageDistribution(resultPerTarget.Attack.Damage)
 	}
+}
+
+func (result *Result) calculateResultForThisTarget(setup *powerattackforecast.ForecastSetup, attack	*powerattackforecast.AttackForecast) *ResultPerTarget {
+	results := &ResultPerTarget{
+		UserID:   setup.UserID,
+		TargetID: setup.Targets[0],
+		PowerID:  setup.PowerID,
+		Attack:   &AttackResult{},
+	}
+
+	attackingSquaddie := setup.SquaddieRepo.GetOriginalSquaddieByID(setup.UserID)
+	powerequip.SquaddieEquipPower(attackingSquaddie, setup.PowerID, setup.PowerRepo)
+
+	toHitChance := attack.VersusContext.ToHitBonus
+	attackRoll, defendRoll := result.DieRoller.RollTwoDice()
+	results.Attack.HitTarget = attackRoll + toHitChance >= defendRoll
+
+	if results.Attack.HitTarget {
+		roll1, roll2 := result.DieRoller.RollTwoDice()
+		results.Attack.CriticallyHitTarget = roll1 + roll2 < attack.VersusContext.CriticalHitThreshold
+	}
+
+	if !results.Attack.HitTarget {
+		results.Attack.Damage = &damagedistribution.DamageDistribution{
+			DamageAbsorbedByArmor:   0,
+			DamageAbsorbedByBarrier: 0,
+			DamageDealt:             0,
+			ExtraBarrierBurnt:       0,
+			TotalBarrierBurnt:       0,
+		}
+	} else if results.Attack.CriticallyHitTarget {
+		results.Attack.Damage = attack.VersusContext.CriticalHitDamage
+	} else {
+		results.Attack.Damage = attack.VersusContext.NormalDamage
+	}
+
+	result.ResultPerTarget = append(result.ResultPerTarget, results)
+
+	targetSquaddie := setup.SquaddieRepo.GetOriginalSquaddieByID(results.TargetID)
+	targetSquaddie.Defense.TakeDamageDistribution(results.Attack.Damage)
+
+	return results
 }

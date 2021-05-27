@@ -203,6 +203,74 @@ func (suite *resultOnAttack) TestAttackCanHitButNotCritically(checker *C) {
 	)
 }
 
+func (suite *resultOnAttack) TestAttackCanHitCritically(checker *C) {
+	suite.resultBlotOnBandit.DieRoller = &testutility.AlwaysHitDieRoller{}
+	suite.blot.AttackEffect.CriticalHitThreshold = 900
+
+	suite.teros.Offense.Mind = 2
+
+	suite.blot.AttackEffect.DamageBonus = 3
+
+	suite.bandit.Defense.CurrentBarrier = 3
+	suite.bandit.Defense.Armor = 1
+	suite.bandit.Defense.MaxHitPoints = 1
+	suite.bandit.Defense.SetHPToMax()
+
+	suite.forecastBlotOnBandit.CalculateForecast()
+	suite.resultBlotOnBandit.Commit()
+
+	checker.Assert(suite.resultBlotOnBandit.ResultPerTarget[0].PowerID, Equals, suite.blot.ID)
+	checker.Assert(suite.resultBlotOnBandit.ResultPerTarget[0].Attack.HitTarget, Equals, true)
+	checker.Assert(suite.resultBlotOnBandit.ResultPerTarget[0].Attack.CriticallyHitTarget, Equals, true)
+	checker.Assert(suite.resultBlotOnBandit.ResultPerTarget[0].Attack.Damage.DamageAbsorbedByBarrier, Equals, 3)
+	checker.Assert(suite.resultBlotOnBandit.ResultPerTarget[0].Attack.Damage.DamageAbsorbedByArmor, Equals, 0)
+	checker.Assert(suite.resultBlotOnBandit.ResultPerTarget[0].Attack.Damage.DamageDealt, Equals, 7)
+
+	checker.Assert(
+		suite.bandit.Defense.CurrentHitPoints,
+		Equals,
+		0,
+	)
+}
+
+func (suite *resultOnAttack) TestCounterAttacks(checker *C) {
+	suite.resultSpearOnBandit.DieRoller = &testutility.AlwaysHitDieRoller{}
+
+	suite.teros.Offense.Strength = 2
+	suite.teros.Defense.Armor = 0
+	suite.teros.Defense.CurrentBarrier = 0
+
+	suite.spear.AttackEffect.DamageBonus = 3
+
+	suite.axe.AttackEffect.CanCounterAttack = true
+	suite.axe.AttackEffect.DamageBonus = 3
+	suite.bandit.Offense.Strength = 0
+	suite.bandit.Defense.Armor = 1
+	powerequip.SquaddieEquipPower(suite.bandit, suite.axe.ID, suite.powerRepo)
+
+	suite.forecastSpearOnBandit.CalculateForecast()
+	suite.resultSpearOnBandit.Commit()
+
+	checker.Assert(suite.resultSpearOnBandit.ResultPerTarget[0].PowerID, Equals, suite.spear.ID)
+	checker.Assert(suite.resultSpearOnBandit.ResultPerTarget[0].UserID, Equals, suite.teros.Identification.ID)
+	checker.Assert(suite.resultSpearOnBandit.ResultPerTarget[0].TargetID, Equals, suite.bandit.Identification.ID)
+
+	checker.Assert(suite.resultSpearOnBandit.ResultPerTarget[1].PowerID, Equals, suite.axe.ID)
+	checker.Assert(suite.resultSpearOnBandit.ResultPerTarget[1].UserID, Equals, suite.bandit.Identification.ID)
+	checker.Assert(suite.resultSpearOnBandit.ResultPerTarget[1].TargetID, Equals, suite.teros.Identification.ID)
+	checker.Assert(suite.resultSpearOnBandit.ResultPerTarget[1].Attack.HitTarget, Equals, true)
+	checker.Assert(suite.resultSpearOnBandit.ResultPerTarget[1].Attack.CriticallyHitTarget, Equals, false)
+	checker.Assert(suite.resultSpearOnBandit.ResultPerTarget[1].Attack.Damage.DamageAbsorbedByBarrier, Equals, 0)
+	checker.Assert(suite.resultSpearOnBandit.ResultPerTarget[1].Attack.Damage.DamageAbsorbedByArmor, Equals, 0)
+	checker.Assert(suite.resultSpearOnBandit.ResultPerTarget[1].Attack.Damage.DamageDealt, Equals, 3)
+
+	checker.Assert(
+		suite.teros.Defense.CurrentHitPoints,
+		Equals,
+		suite.teros.Defense.MaxHitPoints - suite.resultSpearOnBandit.ResultPerTarget[1].Attack.Damage.DamageDealt,
+	)
+}
+
 type EquipPowerWhenCommitting struct {
 	teros			*squaddie.Squaddie
 	bandit			*squaddie.Squaddie
