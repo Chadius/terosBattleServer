@@ -2,6 +2,7 @@ package powerattackforecast
 
 import (
 	"github.com/cserrant/terosBattleServer/entity/power"
+	"github.com/cserrant/terosBattleServer/entity/powerusagescenario"
 )
 
 // DefenderContext lists the target's relevant information when under attack
@@ -14,17 +15,17 @@ type DefenderContext struct {
 	BarrierResistance int
 }
 
-func (context *DefenderContext) getPower(setup *ForecastSetup) *power.Power {
+func (context *DefenderContext) getPower(setup *powerusagescenario.Setup) *power.Power {
 	return setup.PowerRepo.GetPowerByID(setup.PowerID)
 }
 
-func (context *DefenderContext) calculate(setup *ForecastSetup) {
+func (context *DefenderContext) calculate(setup *powerusagescenario.Setup) {
 	context.TotalToHitPenalty = context.calculateTotalToHitPenalty(setup)
 	context.ArmorResistance = context.calculateArmorResistance(setup)
 	context.BarrierResistance = context.calculateBarrierResistance(setup)
 }
 
-func (context *DefenderContext) calculateTotalToHitPenalty(setup *ForecastSetup) int {
+func (context *DefenderContext) calculateTotalToHitPenalty(setup *powerusagescenario.Setup) int {
 	attackingPower := context.getPower(setup)
 	target := setup.SquaddieRepo.GetOriginalSquaddieByID(context.TargetID)
 
@@ -38,7 +39,7 @@ func (context *DefenderContext) calculateTotalToHitPenalty(setup *ForecastSetup)
 	return 0
 }
 
-func (context *DefenderContext) calculateArmorResistance(setup *ForecastSetup) int {
+func (context *DefenderContext) calculateArmorResistance(setup *powerusagescenario.Setup) int {
 	attackingPower := context.getPower(setup)
 	target := setup.SquaddieRepo.GetOriginalSquaddieByID(context.TargetID)
 
@@ -48,7 +49,7 @@ func (context *DefenderContext) calculateArmorResistance(setup *ForecastSetup) i
 	return 0
 }
 
-func (context *DefenderContext) calculateBarrierResistance(setup *ForecastSetup) int {
+func (context *DefenderContext) calculateBarrierResistance(setup *powerusagescenario.Setup) int {
 	target := setup.SquaddieRepo.GetOriginalSquaddieByID(context.TargetID)
 	return target.Defense.CurrentBarrier
 }

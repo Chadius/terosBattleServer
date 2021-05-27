@@ -1,6 +1,9 @@
 package powerattackforecast
 
-import "github.com/cserrant/terosBattleServer/entity/power"
+import (
+	"github.com/cserrant/terosBattleServer/entity/power"
+	"github.com/cserrant/terosBattleServer/entity/powerusagescenario"
+)
 
 // AttackerContext lists the attacker's relevant information when attacking
 type AttackerContext struct {
@@ -18,7 +21,7 @@ type AttackerContext struct {
 	CriticalHitDamage int
 }
 
-func (context *AttackerContext)calculate(setup ForecastSetup) {
+func (context *AttackerContext)calculate(setup powerusagescenario.Setup) {
 	power := setup.PowerRepo.GetPowerByID(setup.PowerID)
 
 	context.DamageType = power.PowerType
@@ -30,7 +33,7 @@ func (context *AttackerContext)calculate(setup ForecastSetup) {
 	context.calculateCriticalHit(setup)
 }
 
-func (context *AttackerContext) calculateToHitBonus(setup ForecastSetup) {
+func (context *AttackerContext) calculateToHitBonus(setup powerusagescenario.Setup) {
 	user := setup.SquaddieRepo.GetOriginalSquaddieByID(setup.UserID)
 	power := setup.PowerRepo.GetPowerByID(setup.PowerID)
 
@@ -42,7 +45,7 @@ func (context *AttackerContext) calculateToHitBonus(setup ForecastSetup) {
 	}
 }
 
-func (context *AttackerContext) calculateRawDamage(setup ForecastSetup) int {
+func (context *AttackerContext) calculateRawDamage(setup powerusagescenario.Setup) int {
 	user := setup.SquaddieRepo.GetOriginalSquaddieByID(setup.UserID)
 	powerToAttackWith := setup.PowerRepo.GetPowerByID(setup.PowerID)
 	if powerToAttackWith.PowerType == power.Physical {
@@ -55,7 +58,7 @@ func (context *AttackerContext) calculateRawDamage(setup ForecastSetup) int {
 	return 0
 }
 
-func (context *AttackerContext) calculateCriticalHit(setup ForecastSetup) {
+func (context *AttackerContext) calculateCriticalHit(setup powerusagescenario.Setup) {
 	power := setup.PowerRepo.GetPowerByID(setup.PowerID)
 	if power.AttackEffect.CriticalHitThreshold == 0 {
 		context.CanCritical = false

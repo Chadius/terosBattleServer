@@ -2,6 +2,7 @@ package powercommit_test
 
 import (
 	"github.com/cserrant/terosBattleServer/entity/power"
+	"github.com/cserrant/terosBattleServer/entity/powerusagescenario"
 	"github.com/cserrant/terosBattleServer/entity/squaddie"
 	"github.com/cserrant/terosBattleServer/usecase/powerattackforecast"
 	"github.com/cserrant/terosBattleServer/usecase/powercommit"
@@ -106,7 +107,7 @@ func (suite *resultOnAttack) SetUpTest(checker *C) {
 	)
 
 	suite.forecastSpearOnBandit = &powerattackforecast.Forecast{
-		Setup: powerattackforecast.ForecastSetup{
+		Setup: powerusagescenario.Setup{
 			UserID:          suite.teros.Identification.ID,
 			PowerID:         suite.spear.ID,
 			Targets:         []string{suite.bandit.Identification.ID},
@@ -120,7 +121,7 @@ func (suite *resultOnAttack) SetUpTest(checker *C) {
 	}
 
 	suite.forecastBlotOnBandit = &powerattackforecast.Forecast{
-		Setup: powerattackforecast.ForecastSetup{
+		Setup: powerusagescenario.Setup{
 			UserID:          suite.teros.Identification.ID,
 			PowerID:         suite.blot.ID,
 			Targets:         []string{suite.bandit.Identification.ID},
@@ -134,7 +135,7 @@ func (suite *resultOnAttack) SetUpTest(checker *C) {
 	}
 
 	suite.forecastSpearOnMysticMage = &powerattackforecast.Forecast{
-		Setup: powerattackforecast.ForecastSetup{
+		Setup: powerusagescenario.Setup{
 			UserID:          suite.teros.Identification.ID,
 			PowerID:         suite.spear.ID,
 			Targets:         []string{suite.mysticMage.Identification.ID},
@@ -145,7 +146,7 @@ func (suite *resultOnAttack) SetUpTest(checker *C) {
 	}
 
 	suite.forecastFireballOnBandit = &powerattackforecast.Forecast{
-		Setup: powerattackforecast.ForecastSetup{
+		Setup: powerusagescenario.Setup{
 			UserID:          suite.mysticMage.Identification.ID,
 			PowerID:         suite.fireball.ID,
 			Targets:         []string{suite.bandit.Identification.ID},
@@ -347,7 +348,7 @@ func (suite *EquipPowerWhenCommitting) SetUpTest(checker *C) {
 	)
 
 	suite.forecastSpearOnBandit = &powerattackforecast.Forecast{
-		Setup: powerattackforecast.ForecastSetup{
+		Setup: powerusagescenario.Setup{
 			UserID:          suite.teros.Identification.ID,
 			PowerID:         suite.spear.ID,
 			Targets:         []string{suite.bandit.Identification.ID},
@@ -361,7 +362,7 @@ func (suite *EquipPowerWhenCommitting) SetUpTest(checker *C) {
 	}
 
 	suite.forecastBlotOnBandit = &powerattackforecast.Forecast{
-		Setup: powerattackforecast.ForecastSetup{
+		Setup: powerusagescenario.Setup{
 			UserID:          suite.teros.Identification.ID,
 			PowerID:         suite.blot.ID,
 			Targets:         []string{suite.bandit.Identification.ID},
@@ -375,7 +376,7 @@ func (suite *EquipPowerWhenCommitting) SetUpTest(checker *C) {
 	}
 
 	suite.forecastFireballOnBandit = &powerattackforecast.Forecast{
-		Setup: powerattackforecast.ForecastSetup{
+		Setup: powerusagescenario.Setup{
 			UserID:          suite.mysticMage.Identification.ID,
 			PowerID:         suite.fireball.ID,
 			Targets:         []string{suite.bandit.Identification.ID},

@@ -2,12 +2,11 @@ package main
 
 import (
 	"github.com/cserrant/terosBattleServer/entity/power"
-	"github.com/cserrant/terosBattleServer/entity/powerusagecontext"
-	"github.com/cserrant/terosBattleServer/entity/report"
+	"github.com/cserrant/terosBattleServer/entity/powerusagescenario"
 	"github.com/cserrant/terosBattleServer/entity/squaddie"
+	"github.com/cserrant/terosBattleServer/usecase/powerattackforecast"
 	"github.com/cserrant/terosBattleServer/usecase/powercommit"
 	"github.com/cserrant/terosBattleServer/usecase/powerequip"
-	"github.com/cserrant/terosBattleServer/usecase/powerforecast"
 	"github.com/cserrant/terosBattleServer/utility"
 	"io/ioutil"
 	"log"
@@ -25,67 +24,89 @@ func main() {
 		powerRepo,
 	)
 
-	powerContext := &powerusagecontext.PowerUsageContext{
-		SquaddieRepo:      squaddieRepo,
-		ActingSquaddieID:  attacker.Identification.ID,
-		TargetSquaddieIDs: []string{target.Identification.ID},
-		PowerID:           power.ID,
-		PowerRepo:         powerRepo,
+	powerSetup := powerusagescenario.Setup{
+		UserID:          attacker.Identification.ID,
+		PowerID:         power.ID,
+		Targets:         []string{target.Identification.ID},
+		SquaddieRepo:    squaddieRepo,
+		PowerRepo:       powerRepo,
+		IsCounterAttack: false,
 	}
 
-	powerForecast := powerforecast.CalculatePowerForecast(powerContext)
+	powerForecast := &powerattackforecast.Forecast{
+		Setup: powerSetup,
+	}
+	powerForecast.CalculateForecast()
 
-	for _, attackingPowerForecast := range powerForecast.AttackPowerForecast {
-		printAttackForecast(attackingPowerForecast, squaddieRepo, powerRepo)
+	for _, forecast := range powerForecast.ForecastedResultPerTarget {
+		printAttackForecast(&forecast)
 	}
 
 	println("---")
-	dieRoller := &utility.RandomDieRoller{}
-	attackReports := powercommit.UsePowerAgainstSquaddiesAndGetReport(powerContext, dieRoller)
-	for _, attackReport := range attackReports.AttackingPowerReports {
-		printAttackReport(attackReport)
+	powerResult := &powercommit.Result{
+		Forecast: powerForecast,
+		DieRoller: &utility.RandomDieRoller{},
+	}
+	powerResult.Commit()
+
+	for _, attackReport := range powerResult.ResultPerTarget {
+		printAttackReport(attackReport, &powerSetup)
 	}
 }
 
-func printAttackForecast(forecast *powerusagecontext.AttackingPowerForecast,
-	squaddieRepo *squaddie.Repository,
-	powerRepo *power.Repository) {
-	printPartOfAttackForecast(forecast, squaddieRepo, powerRepo)
+func printAttackForecast(forecast *powerattackforecast.Calculation) {
+	printPartOfAttackForecast(forecast.Attack, forecast.Setup)
 	if forecast.CounterAttack != nil {
 		println("")
 		println("Counterattack:")
-		printPartOfAttackForecast(forecast.CounterAttack, squaddieRepo, powerRepo)
+		printPartOfAttackForecast(forecast.CounterAttack, forecast.CounterAttackSetup)
 	}
 }
 
+func printPartOfAttackForecast(forecast *powerattackforecast.AttackForecast, setup *powerusagescenario.Setup) {
+	squaddieRepo := setup.SquaddieRepo
+	powerRepo := setup.PowerRepo
 
-func printPartOfAttackForecast(forecast *powerusagecontext.AttackingPowerForecast,
-		squaddieRepo *squaddie.Repository,
-		powerRepo *power.Repository) {
-	attacker := squaddieRepo.GetOriginalSquaddieByID(forecast.AttackingSquaddieID)
-	target := squaddieRepo.GetOriginalSquaddieByID(forecast.TargetSquaddieID)
-	power := powerRepo.GetPowerByID(forecast.PowerID)
-	println(attacker.Identification.Name, "will attack", target.Identification.Name, "with", power.Name)
-	println("Chance to hit (out of 36) ", forecast.ChanceToHit)
-	println("Damage taken              ", forecast.DamageTaken)
-	println("Barrier damage            ", forecast.BarrierDamageTaken)
+	attacker := squaddieRepo.GetOriginalSquaddieByID(setup.UserID)
+	target := squaddieRepo.GetOriginalSquaddieByID(setup.Targets[0])
+	attackingPower := powerRepo.GetPowerByID(setup.PowerID)
+
+	hitChance := power.GetChanceToHitBasedOnHitRate(forecast.VersusContext.ToHitBonus)
+	println(attacker.Identification.Name, "will attack", target.Identification.Name, "with", attackingPower.Name)
+	println("Attacker ToHit bonus", forecast.VersusContext.ToHitBonus)
+	println("Chance to hit (out of 36) ", hitChance)
+	println("Damage taken              ", forecast.VersusContext.NormalDamage.DamageDealt)
+	println("Barrier damage            ", forecast.VersusContext.NormalDamage.TotalBarrierBurnt)
 	println("---")
-	println("Expected damage (36 = 1HP)", forecast.ExpectedDamage)
-	println("Expected barrier damage   ", forecast.ExpectedBarrierDamage)
+	println("Expected damage (36 = 1HP)", forecast.VersusContext.NormalDamage.DamageDealt * hitChance)
+	println("Expected barrier damage   ", forecast.VersusContext.NormalDamage.TotalBarrierBurnt * hitChance)
 }
 
-func printAttackReport(report *report.AttackingPowerReport) {
-	if !report.WasAHit {
+func printAttackReport(result *powercommit.ResultPerTarget, setup *powerusagescenario.Setup) {
+	squaddieRepo := setup.SquaddieRepo
+	powerRepo := setup.PowerRepo
+
+	attacker := squaddieRepo.GetOriginalSquaddieByID(result.UserID)
+	target := squaddieRepo.GetOriginalSquaddieByID(result.TargetID)
+	attackingPower := powerRepo.GetPowerByID(result.PowerID)
+
+	println(attacker.Identification.Name, "attacks with a", result.AttackRoll)
+	println(target.Identification.Name, "defends with a", result.DefendRoll)
+	if !result.Attack.HitTarget {
 		println("Missed")
-	} else if report.WasACriticalHit {
+		return
+	}
+
+	if result.Attack.CriticallyHitTarget {
 		println("Critical Hit")
-		println(report.DamageTaken, "damage taken")
-		println(report.BarrierDamage, "barrier damage")
 	} else {
 		println("Hit")
-		println(report.DamageTaken, "damage taken")
-		println(report.BarrierDamage, "barrier damage")
 	}
+	println(attackingPower.Name, "deals")
+	println(result.Attack.Damage.DamageDealt, "damage taken")
+	println(result.Attack.Damage.TotalBarrierBurnt, "barrier damage")
+
+	println(target.Identification.Name, "HP:", target.Defense.CurrentHitPoints,"/",target.Defense.MaxHitPoints,"Barrier",target.Defense.CurrentBarrier,"/",target.Defense.MaxBarrier)
 }
 
 func loadSquaddieRepo() (repo *squaddie.Repository) {
@@ -112,11 +133,13 @@ func loadPowerRepo() (repo *power.Repository) {
 func loadActors (attackerID, targetID, powerID string, squaddieRepo *squaddie.Repository, powerRepo *power.Repository) (*squaddie.Squaddie, *squaddie.Squaddie, *power.Power) {
 	attacker := squaddieRepo.GetOriginalSquaddieByID(attackerID)
 	attacker.Defense.SetBarrierToMax()
+	powerequip.EquipDefaultPower(attacker, powerRepo)
+	powerequip.LoadAllOfSquaddieInnatePowers(attacker, attacker.PowerCollection.PowerReferences, powerRepo)
 
 	target := squaddieRepo.GetOriginalSquaddieByID(targetID)
 	target.Defense.SetBarrierToMax()
-
-	powerequip.LoadAllOfSquaddieInnatePowers(attacker, attacker.PowerCollection.PowerReferences, powerRepo)
+	powerequip.EquipDefaultPower(target, powerRepo)
+	powerequip.LoadAllOfSquaddieInnatePowers(target, target.PowerCollection.PowerReferences, powerRepo)
 
 	power := powerRepo.GetPowerByID(powerID)
 

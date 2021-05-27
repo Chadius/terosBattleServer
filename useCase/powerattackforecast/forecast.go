@@ -1,33 +1,22 @@
 package powerattackforecast
 
 import (
-	"github.com/cserrant/terosBattleServer/entity/power"
-	"github.com/cserrant/terosBattleServer/entity/squaddie"
-	"github.com/cserrant/terosBattleServer/usecase/powercounter"
+	"github.com/cserrant/terosBattleServer/entity/powerusagescenario"
+	"github.com/cserrant/terosBattleServer/usecase/powerequip"
 )
 
 // Forecast will store the information needed to explain what will happen when a squaddie
 //  uses a given power. It can be asked multiple questions.
 type Forecast struct {
-	Setup	ForecastSetup
+	Setup                     powerusagescenario.Setup
 	ForecastedResultPerTarget []Calculation
-}
-
-// ForecastSetup is supplied upon creation to explain all of the relevant parts of this power.
-type ForecastSetup struct {
-	UserID          string
-	PowerID         string
-	Targets        []string
-	SquaddieRepo    *squaddie.Repository
-	PowerRepo       *power.Repository
-	IsCounterAttack bool
 }
 
 // Calculation holds the results of the forecast.
 type Calculation struct {
-	Setup *ForecastSetup
+	Setup *powerusagescenario.Setup
 	Attack	*AttackForecast
-	CounterAttackSetup *ForecastSetup
+	CounterAttackSetup *powerusagescenario.Setup
 	CounterAttack *AttackForecast
 }
 
@@ -44,13 +33,13 @@ func (forecast *Forecast) CalculateForecast() {
 	for _, targetID := range forecast.Setup.Targets {
 		attack := forecast.CalculateAttackForecast(targetID)
 		var counterAttack *AttackForecast
-		var counterAttackSetup *ForecastSetup
+		var counterAttackSetup *powerusagescenario.Setup
 		if forecast.isCounterattackPossible(targetID) {
 			counterAttackSetup, counterAttack = forecast.createCounterAttackForecast(targetID)
 		}
 
 		calculation := Calculation{
-			Setup: &ForecastSetup{
+			Setup: &powerusagescenario.Setup{
 				UserID:          forecast.Setup.UserID,
 				PowerID:         forecast.Setup.PowerID,
 				Targets:         []string{targetID},
@@ -68,18 +57,18 @@ func (forecast *Forecast) CalculateForecast() {
 
 func (forecast *Forecast) isCounterattackPossible(targetID string) bool {
 	squaddieThatWantsToCounter := forecast.Setup.SquaddieRepo.GetOriginalSquaddieByID(targetID)
-	if forecast.Setup.IsCounterAttack == false && powercounter.CanSquaddieCounterWithEquippedWeapon(squaddieThatWantsToCounter, forecast.Setup.PowerRepo) {
+	if forecast.Setup.IsCounterAttack == false && powerequip.CanSquaddieCounterWithEquippedWeapon(squaddieThatWantsToCounter, forecast.Setup.PowerRepo) {
 		return true
 	}
 	return false
 }
 
-func (forecast *Forecast) createCounterAttackForecast(counterAttackingSquaddieID string) (*ForecastSetup, *AttackForecast) {
+func (forecast *Forecast) createCounterAttackForecast(counterAttackingSquaddieID string) (*powerusagescenario.Setup, *AttackForecast) {
 	counterAttackingSquaddie := forecast.Setup.SquaddieRepo.GetOriginalSquaddieByID(counterAttackingSquaddieID)
 	counterAttackingPowerID := counterAttackingSquaddie.PowerCollection.CurrentlyEquippedPowerID
 	counterAttackingTargetID := forecast.Setup.UserID
 
-	counterForecastSetup := ForecastSetup{
+	counterForecastSetup := powerusagescenario.Setup{
 		UserID:          counterAttackingSquaddieID,
 		PowerID:         counterAttackingPowerID,
 		Targets:         []string{counterAttackingTargetID},

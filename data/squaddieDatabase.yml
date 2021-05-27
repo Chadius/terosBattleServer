@@ -4,7 +4,7 @@
     id: squaddieTeros
     affiliation: Player
   offense:
-    aim: 0
+    aim: 2
     strength: 1
   defense:
     max_barrier: 3
@@ -25,6 +25,7 @@
     aim: 0
     strength: 1
   defense:
+    max_hit_points: 5
     max_barrier: 0
     armor: 0
     dodge: 0

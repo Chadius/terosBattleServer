@@ -2,6 +2,7 @@ package powercommit
 
 import (
 	"github.com/cserrant/terosBattleServer/entity/damagedistribution"
+	"github.com/cserrant/terosBattleServer/entity/powerusagescenario"
 	"github.com/cserrant/terosBattleServer/usecase/powerattackforecast"
 	"github.com/cserrant/terosBattleServer/usecase/powerequip"
 	"github.com/cserrant/terosBattleServer/utility"
@@ -21,6 +22,7 @@ type ResultPerTarget struct {
 	PowerID string
 	TargetID string
 	Attack *AttackResult
+	AttackRoll, DefendRoll int
 }
 
 // AttackResult shows what happens when the power was an attack.
@@ -41,7 +43,7 @@ func (result *Result) Commit() {
 	}
 }
 
-func (result *Result) calculateResultForThisTarget(setup *powerattackforecast.ForecastSetup, attack	*powerattackforecast.AttackForecast) *ResultPerTarget {
+func (result *Result) calculateResultForThisTarget(setup *powerusagescenario.Setup, attack *powerattackforecast.AttackForecast) *ResultPerTarget {
 	results := &ResultPerTarget{
 		UserID:   setup.UserID,
 		TargetID: setup.Targets[0],
@@ -55,6 +57,8 @@ func (result *Result) calculateResultForThisTarget(setup *powerattackforecast.Fo
 	toHitChance := attack.VersusContext.ToHitBonus
 	attackRoll, defendRoll := result.DieRoller.RollTwoDice()
 	results.Attack.HitTarget = attackRoll + toHitChance >= defendRoll
+	results.AttackRoll = attackRoll
+	results.DefendRoll = defendRoll
 
 	if results.Attack.HitTarget {
 		roll1, roll2 := result.DieRoller.RollTwoDice()

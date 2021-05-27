@@ -2,6 +2,7 @@ package powerattackforecast_test
 
 import (
 	"github.com/cserrant/terosBattleServer/entity/power"
+	"github.com/cserrant/terosBattleServer/entity/powerusagescenario"
 	"github.com/cserrant/terosBattleServer/entity/squaddie"
 	"github.com/cserrant/terosBattleServer/usecase/powerattackforecast"
 	"github.com/cserrant/terosBattleServer/usecase/powerequip"
@@ -68,7 +69,7 @@ func (suite *CounterAttackCalculate) SetUpTest(checker *C) {
 	suite.powerRepo.AddSlicePowerSource([]*power.Power{suite.spear, suite.axe, suite.fireball})
 
 	suite.forecastSpearOnBandit = &powerattackforecast.Forecast{
-		Setup: powerattackforecast.ForecastSetup{
+		Setup: powerusagescenario.Setup{
 			UserID:          suite.teros.Identification.ID,
 			PowerID:         suite.spear.ID,
 			Targets:         []string{suite.bandit.Identification.ID},
@@ -79,7 +80,7 @@ func (suite *CounterAttackCalculate) SetUpTest(checker *C) {
 	}
 
 	suite.forecastSpearOnMysticMage = &powerattackforecast.Forecast{
-		Setup: powerattackforecast.ForecastSetup{
+		Setup: powerusagescenario.Setup{
 			UserID:          suite.teros.Identification.ID,
 			PowerID:         suite.spear.ID,
 			Targets:         []string{suite.mysticMage.Identification.ID},

@@ -3,7 +3,6 @@ package powerequip_test
 import (
 	"github.com/cserrant/terosBattleServer/entity/power"
 	"github.com/cserrant/terosBattleServer/entity/squaddie"
-	"github.com/cserrant/terosBattleServer/usecase/powercounter"
 	"github.com/cserrant/terosBattleServer/usecase/powerequip"
 	. "gopkg.in/check.v1"
 	"testing"
@@ -130,7 +129,7 @@ func (suite *SquaddieEquipPowersFromRepo) TestSquaddieCanCounter (checker *C) {
 	}
 	powerequip.LoadAllOfSquaddieInnatePowers(suite.teros, terosPowerReferences, suite.powerRepo)
 	powerequip.EquipDefaultPower(suite.teros, suite.powerRepo)
-	checker.Assert(powercounter.CanSquaddieCounterWithEquippedWeapon(suite.teros, suite.powerRepo), Equals, true)
+	checker.Assert(powerequip.CanSquaddieCounterWithEquippedWeapon(suite.teros, suite.powerRepo), Equals, true)
 }
 
 func (suite *SquaddieEquipPowersFromRepo) TestSquaddieCannotCounterWithUncounterablePower (checker *C) {
@@ -141,7 +140,7 @@ func (suite *SquaddieEquipPowersFromRepo) TestSquaddieCannotCounterWithUncounter
 	}
 	powerequip.LoadAllOfSquaddieInnatePowers(suite.teros, terosPowerReferences, suite.powerRepo)
 	powerequip.SquaddieEquipPower(suite.teros, suite.scimitar.ID, suite.powerRepo)
-	checker.Assert(powercounter.CanSquaddieCounterWithEquippedWeapon(suite.teros, suite.powerRepo), Equals, false)
+	checker.Assert(powerequip.CanSquaddieCounterWithEquippedWeapon(suite.teros, suite.powerRepo), Equals, false)
 }
 
 func (suite *SquaddieEquipPowersFromRepo) TestSquaddieCannotCounterWithUnequippablePower (checker *C) {
@@ -150,5 +149,5 @@ func (suite *SquaddieEquipPowersFromRepo) TestSquaddieCannotCounterWithUnequippa
 	}
 	powerequip.LoadAllOfSquaddieInnatePowers(suite.teros, terosPowerReferences, suite.powerRepo)
 	powerequip.EquipDefaultPower(suite.teros, suite.powerRepo)
-	checker.Assert(powercounter.CanSquaddieCounterWithEquippedWeapon(suite.teros, suite.powerRepo), Equals, false)
+	checker.Assert(powerequip.CanSquaddieCounterWithEquippedWeapon(suite.teros, suite.powerRepo), Equals, false)
 }
