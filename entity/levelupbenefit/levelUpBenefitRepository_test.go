@@ -24,17 +24,23 @@ var _ = Suite(&LevelUpBenefitRepositorySuite{})
 func (suite *LevelUpBenefitRepositorySuite) SetUpTest(c *C) {
 	suite.jsonByteStream = []byte(`[
           {
+           "identification": {
             "id":"abcdefg0",
             "level_up_benefit_type": "small",
-            "class_id": "class0",
+            "class_id": "class0"
+          },
+          "defense": {
             "max_hit_points": 1,
-            "aim": 0,
-            "strength": 2,
-            "mind": 3,
             "dodge": 4,
             "deflect": 5,
             "max_barrier": 6,
-            "armor": 7,
+            "armor": 7
+          },
+          "offense": {
+            "aim": 0,
+            "strength": 2,
+            "mind": 3
+          },
             "powers": [
               {
                 "name": "Scimitar",
@@ -82,17 +88,23 @@ func (suite *LevelUpBenefitRepositorySuite) TestCreateLevelUpBenefitsFromJSON(ch
 	suite.levelRepo = levelupbenefit.NewLevelUpBenefitRepository()
 	suite.jsonByteStream = []byte(`[
           {
+           "identification": {
             "id":"abcdefg0",
             "level_up_benefit_type": "small",
-            "class_id": "class0",
-            "max_hit_points": 1,
-            "aim": 0,
-            "strength": 2,
-            "mind": 3,
+            "class_id": "class0"
+          },
+           "defense": {
             "dodge": 4,
             "deflect": 5,
             "max_barrier": 6,
-            "armor": 7,
+            "max_hit_points": 1,
+            "armor": 7
+           },
+           "offense": {
+            "aim": 0,
+            "strength": 2,
+            "mind": 3
+           },
             "powers": [
               {
                 "name": "Scimitar",
@@ -116,17 +128,20 @@ func (suite *LevelUpBenefitRepositorySuite) TestCreateLevelUpBenefitsFromYAML(ch
 	suite.levelRepo = levelupbenefit.NewLevelUpBenefitRepository()
 	suite.yamlByteStream = []byte(
 		`
-- id: abcdefg0
-  class_id: class0
-  level_up_benefit_type: small
-  max_hit_points: 1
-  aim: 0
-  strength: 2
-  mind: 3
-  dodge: 4
-  deflect: 5
-  max_barrier: 6
-  armor: 7
+- identification:
+    id: abcdefg0
+    class_id: class0
+    level_up_benefit_type: small
+  defense:
+    max_hit_points: 1
+    dodge: 4
+    deflect: 5
+    max_barrier: 6
+    armor: 7
+  offense:
+    aim: 0
+    strength: 2
+    mind: 3
   powers:
   - name: Scimitar
     id: deadbeef
@@ -146,14 +161,18 @@ func (suite *LevelUpBenefitRepositorySuite) TestCreateLevelUpBenefitsFromASlice(
 	checker.Assert(suite.levelRepo.GetNumberOfLevelUpBenefits(), Equals, 0)
 	success, _ := suite.levelRepo.AddLevels([]*levelupbenefit.LevelUpBenefit{
 		{
-			LevelUpBenefitType: levelupbenefit.Small,
-			ClassID:            "class0",
-			ID:                 "level0",
+			Identification: &levelupbenefit.Identification{
+				LevelUpBenefitType: levelupbenefit.Small,
+				ClassID:            "class0",
+				ID:                 "level0",
+			},
 		},
 		{
-			LevelUpBenefitType: levelupbenefit.Small,
-			ClassID:            "class0",
-			ID:                 "level1",
+			Identification: &levelupbenefit.Identification{
+				LevelUpBenefitType: levelupbenefit.Small,
+				ClassID:            "class0",
+				ID:                 "level1",
+			},
 		},
 	})
 	checker.Assert(success, Equals, true)
@@ -164,17 +183,21 @@ func (suite *LevelUpBenefitRepositorySuite) TestStopLoadingOnFirstInvalidLevelUp
 	suite.levelRepo = levelupbenefit.NewLevelUpBenefitRepository()
 	byteStream := []byte(`[
           {
+           "identification": {
             "id":"abcdefg0",
             "class_id": "class0",
-            "level_up_benefit_type": "small",
+            "level_up_benefit_type": "small"
+          },
+           "defense": {
             "max_hit_points": 1,
-            "aim": 0,
-            "strength": 2,
-            "mind": 3,
             "dodge": 4,
             "deflect": 5,
             "max_barrier": 6,
-            "armor": 7,
+            "armor": 7
+           },
+            "aim": 0,
+            "strength": 2,
+            "mind": 3,
             "powers": [
               {
                 "name": "Scimitar",
@@ -183,16 +206,22 @@ func (suite *LevelUpBenefitRepositorySuite) TestStopLoadingOnFirstInvalidLevelUp
             ]
           },
 		  {
+           "identification": {
 				"level_up_benefit_type": "unknown",
-                "class_id": "class0",
+                "class_id": "class0"
+           },
+           "defense": {
 				"max_hit_points": 1,
-				"aim": 0,
-				"strength": 2,
-				"mind": 3,
 				"dodge": 4,
 				"deflect": 5,
 				"max_barrier": 6,
-				"armor": 7,
+				"armor": 7
+           },
+           "offense": {
+				"aim": 0,
+				"strength": 2,
+				"mind": 3
+           },
 				"powers": [{"name": "Scimitar", "id": "deadbeef"}]
           }
 ]`)
@@ -204,17 +233,23 @@ func (suite *LevelUpBenefitRepositorySuite) TestStopLoadingOnFirstInvalidLevelUp
 func (suite *LevelUpBenefitRepositorySuite) TestCanSearchLevelUpBenefits(checker *C) {
 	suite.jsonByteStream = []byte(`[
          {
-           "id":"abcdefg0",
-           "level_up_benefit_type": "small",
-           "class_id": "class0",
-           "max_hit_points": 1,
-           "aim": 0,
-           "strength": 2,
-           "mind": 3,
-           "dodge": 4,
-           "deflect": 5,
-           "max_barrier": 6,
-           "armor": 7,
+           "identification": {
+             "id":"abcdefg0",
+             "level_up_benefit_type": "small",
+             "class_id": "class0"
+           },
+           "defense": {
+             "max_hit_points": 1,
+             "dodge": 4,
+             "deflect": 5,
+             "max_barrier": 6,
+             "armor": 7
+           },
+           "offense": {
+             "aim": 0,
+             "strength": 2,
+             "mind": 3
+           },
            "powers": [
              {
                "name": "Scimitar",
@@ -237,16 +272,18 @@ func (suite *LevelUpBenefitRepositorySuite) TestCanSearchLevelUpBenefits(checker
 	checker.Assert(benefits, HasLen, 1)
 
 	firstBenefit := benefits[0]
-	checker.Assert(firstBenefit.LevelUpBenefitType, Equals, levelupbenefit.Small)
-	checker.Assert(firstBenefit.ClassID, Equals, "class0")
-	checker.Assert(firstBenefit.MaxHitPoints, Equals, 1)
-	checker.Assert(firstBenefit.Aim, Equals, 0)
-	checker.Assert(firstBenefit.Strength, Equals, 2)
-	checker.Assert(firstBenefit.Mind, Equals, 3)
-	checker.Assert(firstBenefit.Dodge, Equals, 4)
-	checker.Assert(firstBenefit.Deflect, Equals, 5)
-	checker.Assert(firstBenefit.MaxBarrier, Equals, 6)
-	checker.Assert(firstBenefit.Armor, Equals, 7)
+	checker.Assert(firstBenefit.Identification.LevelUpBenefitType, Equals, levelupbenefit.Small)
+	checker.Assert(firstBenefit.Identification.ClassID, Equals, "class0")
+
+	checker.Assert(firstBenefit.Defense.MaxHitPoints, Equals, 1)
+	checker.Assert(firstBenefit.Defense.Dodge, Equals, 4)
+	checker.Assert(firstBenefit.Defense.Deflect, Equals, 5)
+	checker.Assert(firstBenefit.Defense.MaxBarrier, Equals, 6)
+	checker.Assert(firstBenefit.Defense.Armor, Equals, 7)
+
+	checker.Assert(firstBenefit.Offense.Aim, Equals, 0)
+	checker.Assert(firstBenefit.Offense.Strength, Equals, 2)
+	checker.Assert(firstBenefit.Offense.Mind, Equals, 3)
 
 	checker.Assert(firstBenefit.PowerIDGained, HasLen, 1)
 	checker.Assert(firstBenefit.PowerIDGained[0].Name, Equals, "Scimitar")
@@ -256,17 +293,23 @@ func (suite *LevelUpBenefitRepositorySuite) TestCanSearchLevelUpBenefits(checker
 func (suite *LevelUpBenefitRepositorySuite) TestRaisesAnErrorWithNonexistentClassID(checker *C) {
 	suite.jsonByteStream = []byte(`[
           {
+           "identification": {
             "id":"abcdefg0",
             "level_up_benefit_type": "small",
-            "class_id": "class0",
+            "class_id": "class0"
+           },
+           "defense": {
             "max_hit_points": 1,
-            "aim": 0,
-            "strength": 2,
-            "mind": 3,
             "dodge": 4,
             "deflect": 5,
             "max_barrier": 6,
-            "armor": 7,
+            "armor": 7
+           },
+           "offense": {
+            "aim": 0,
+            "strength": 2,
+            "mind": 3
+           },
             "powers": [
               {
                 "name": "Scimitar",
@@ -297,17 +340,21 @@ func (suite *LevelUpBenefitRepositorySuite) TestGetBigAndSmallLevelsForAGivenCla
 func (suite *LevelUpBenefitRepositorySuite) TestRaiseErrorIfClassDoesNotExist(checker *C) {
 	suite.jsonByteStream = []byte(`[
           {
+           "identification": {
             "id":"abcdefg0",
             "level_up_benefit_type": "small",
-            "class_id": "class0",
+            "class_id": "class0"
+           },
+           "defense": {
             "max_hit_points": 1,
-            "aim": 0,
-            "strength": 2,
-            "mind": 3,
             "dodge": 4,
             "deflect": 5,
             "max_barrier": 6,
-            "armor": 7,
+            "armor": 7
+           },
+            "aim": 0,
+            "strength": 2,
+            "mind": 3,
             "powers": [
               {
                 "name": "Scimitar",

@@ -17,19 +17,35 @@ const (
 	Big = "big"
 )
 
-// LevelUpBenefit describes how a Squaddie improves upon levelling up.
-type LevelUpBenefit struct {
-	LevelUpBenefitType Type               `json:"level_up_benefit_type" yaml:"level_up_benefit_type"`
+// Identification is used to uniquely identify this LevelUpBenefit.
+type Identification struct {
 	ClassID            string             `json:"class_id" yaml:"class_id"`
+	LevelUpBenefitType Type               `json:"level_up_benefit_type" yaml:"level_up_benefit_type"`
 	ID                 string             `json:"id" yaml:"id"`
+}
+
+// Defense describes all of the defensive benefits of leveling up.
+type Defense struct {
 	MaxHitPoints       int                `json:"max_hit_points" yaml:"max_hit_points"`
-	Aim                int                `json:"aim" yaml:"aim"`
-	Strength           int                `json:"strength" yaml:"strength"`
-	Mind               int                `json:"mind" yaml:"mind"`
 	Dodge              int                `json:"dodge" yaml:"dodge"`
 	Deflect            int                `json:"deflect" yaml:"deflect"`
 	MaxBarrier         int                `json:"max_barrier" yaml:"max_barrier"`
 	Armor              int                `json:"armor" yaml:"armor"`
+}
+
+// Offense describes all of the offensive benefits of leveling up.
+type Offense struct {
+	Aim                int                `json:"aim" yaml:"aim"`
+	Strength           int                `json:"strength" yaml:"strength"`
+	Mind               int                `json:"mind" yaml:"mind"`
+}
+
+// LevelUpBenefit describes how a Squaddie improves upon levelling up.
+type LevelUpBenefit struct {
+	Identification				*Identification              `json:"identification" yaml:"identification"`
+	Defense						*Defense						`json:"defense" yaml:"defense"`
+	Offense						*Offense						`json:"offense" yaml:"offense"`
+	//PowerCollection				PowerCollection				`json:"powers" yaml:"powers"`
 	PowerIDGained      []*power.Reference `json:"powers" yaml:"powers"`
 	PowerIDLost        []*power.Reference `json:"powers_lost" yaml:"powers_lost"`
 	Movement           *squaddie.Movement `json:"Movement" yaml:"Movement"`
@@ -37,11 +53,11 @@ type LevelUpBenefit struct {
 
 // CheckForErrors ensures the LevelUpBenefit has valid fields
 func (benefit *LevelUpBenefit) CheckForErrors() error {
-	if benefit.LevelUpBenefitType != Small && benefit.LevelUpBenefitType != Big {
-		return fmt.Errorf(`unknown level up benefit type: "%s"`, benefit.LevelUpBenefitType)
+	if benefit.Identification.LevelUpBenefitType != Small && benefit.Identification.LevelUpBenefitType != Big {
+		return fmt.Errorf(`unknown level up benefit type: "%s"`, benefit.Identification.LevelUpBenefitType)
 	}
 
-	if benefit.ClassID == "" {
+	if benefit.Identification.ClassID == "" {
 		return errors.New(`no classID found for LevelUpBenefit`)
 	}
 	return nil
