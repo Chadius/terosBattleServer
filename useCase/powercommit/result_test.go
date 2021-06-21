@@ -64,25 +64,32 @@ func (suite *resultOnAttack) SetUpTest(checker *C) {
 
 	suite.spear = power.NewPower("spear")
 	suite.spear.PowerType = power.Physical
-	suite.spear.AttackEffect.ToHitBonus = 1
-	suite.spear.AttackEffect.DamageBonus = 1
-	suite.spear.AttackEffect.CanBeEquipped = true
-	suite.spear.AttackEffect.CanCounterAttack = true
+	suite.spear.AttackEffect  = &power.AttackingEffect{
+		ToHitBonus: 1,
+		DamageBonus: 1,
+		CanBeEquipped: true,
+		CanCounterAttack: true,
+	}
 
 	suite.blot = power.NewPower("blot")
 	suite.blot.PowerType = power.Spell
+	suite.blot.AttackEffect = &power.AttackingEffect{}
 
 	suite.axe = power.NewPower("axe")
 	suite.axe.ID = "axe"
 	suite.axe.PowerType = power.Physical
-	suite.axe.AttackEffect.ToHitBonus = 1
-	suite.axe.AttackEffect.DamageBonus = 1
-	suite.axe.AttackEffect.CanBeEquipped = true
+	suite.axe.AttackEffect = &power.AttackingEffect{
+		ToHitBonus: 1,
+		DamageBonus: 1,
+		CanBeEquipped: true,
+	}
 
 	suite.fireball = power.NewPower("fireball")
 	suite.fireball.ID = "fireball"
 	suite.fireball.PowerType = power.Spell
-	suite.fireball.AttackEffect.DamageBonus = 3
+	suite.fireball.AttackEffect = &power.AttackingEffect{
+		DamageBonus: 3,
+	}
 
 	suite.squaddieRepo = squaddie.NewSquaddieRepository()
 	suite.squaddieRepo.AddSquaddies([]*squaddie.Squaddie{suite.teros, suite.bandit, suite.bandit2, suite.mysticMage})
@@ -231,9 +238,11 @@ func (suite *resultOnAttack) TestAttackCanHitButNotCritically(checker *C) {
 
 func (suite *resultOnAttack) TestAttackCanHitCritically(checker *C) {
 	suite.resultBlotOnBandit.DieRoller = &testutility.AlwaysHitDieRoller{}
-	suite.blot.AttackEffect.CriticalEffect = &power.CriticalEffect{
-		CriticalHitThresholdBonus: 9000,
-		Damage:                    3,
+	suite.blot.AttackEffect = &power.AttackingEffect{
+		CriticalEffect: &power.CriticalEffect{
+			CriticalHitThresholdBonus: 9000,
+			Damage:                    3,
+		},
 	}
 
 	suite.teros.Offense.Mind = 2
@@ -402,17 +411,22 @@ func (suite *EquipPowerWhenCommitting) SetUpTest(checker *C) {
 
 	suite.spear = power.NewPower("spear")
 	suite.spear.PowerType = power.Physical
-	suite.spear.AttackEffect.ToHitBonus = 1
-	suite.spear.AttackEffect.DamageBonus = 1
-	suite.spear.AttackEffect.CanBeEquipped = true
-	suite.spear.AttackEffect.CanCounterAttack = true
+	suite.spear.AttackEffect = &power.AttackingEffect{
+		ToHitBonus: 1,
+		DamageBonus: 1,
+		CanBeEquipped: true,
+		CanCounterAttack: true,
+	}
 
 	suite.blot = power.NewPower("blot")
 	suite.blot.PowerType = power.Spell
+	suite.blot.AttackEffect = &power.AttackingEffect{}
 
 	suite.fireball = power.NewPower("fireball")
 	suite.fireball.PowerType = power.Spell
-	suite.fireball.AttackEffect.DamageBonus = 3
+	suite.fireball.AttackEffect = &power.AttackingEffect{
+		DamageBonus: 3,
+	}
 
 	suite.squaddieRepo = squaddie.NewSquaddieRepository()
 	suite.squaddieRepo.AddSquaddies([]*squaddie.Squaddie{suite.teros, suite.bandit, suite.mysticMage})

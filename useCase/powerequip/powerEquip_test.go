@@ -23,11 +23,15 @@ var _ = Suite(&SquaddieEquipPowersFromRepo{})
 func (suite *SquaddieEquipPowersFromRepo) SetUpTest(checker *C) {
 	suite.teros = squaddie.NewSquaddie("Teros")
 	suite.spear = power.NewPower("Spear")
-	suite.spear.AttackEffect.CanBeEquipped = true
-	suite.spear.AttackEffect.CanCounterAttack = true
+	suite.spear.AttackEffect = &power.AttackingEffect{
+		CanBeEquipped: true,
+		CanCounterAttack: true,
+	}
 
 	suite.scimitar = power.NewPower("scimitar the second")
-	suite.scimitar.AttackEffect.CanBeEquipped = true
+	suite.scimitar.AttackEffect = &power.AttackingEffect{
+		CanBeEquipped: true,
+	}
 
 	suite.blot = power.NewPower("Magic spell Blot")
 
@@ -104,7 +108,9 @@ func (suite *SquaddieEquipPowersFromRepo) TestFailToEquipNonexistentPowers (chec
 
 func (suite *SquaddieEquipPowersFromRepo) TestFailToEquipUnownedPower (checker *C) {
 	notTerosPower := power.NewPower("Does not belong to Teros")
-	notTerosPower.AttackEffect.CanBeEquipped = true
+	notTerosPower.AttackEffect = &power.AttackingEffect{
+		CanBeEquipped: true,
+	}
 	suite.powerRepo.AddSlicePowerSource([]*power.Power{
 		notTerosPower,
 	})

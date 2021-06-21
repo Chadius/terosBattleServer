@@ -40,7 +40,7 @@ func SquaddieEquipPower(squaddie *squaddie.Squaddie, powerToEquipID string, repo
 	if powerToEquip == nil {
 		return false
 	}
-	if powerToEquip.AttackEffect.CanBeEquipped == false {
+	if powerToEquip.AttackEffect == nil || powerToEquip.AttackEffect.CanBeEquipped == false {
 		return false
 	}
 

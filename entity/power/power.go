@@ -56,11 +56,6 @@ func NewPower(name string) *Power {
 			ID:   utility.StringWithCharset(8, "abcdefgh0123456789"),
 		},
 		PowerType: Physical,
-		AttackEffect: &AttackingEffect{
-			ToHitBonus:           0,
-			DamageBonus:          0,
-			ExtraBarrierBurn:     0,
-		},
 	}
 	return &newAttackingPower
 }

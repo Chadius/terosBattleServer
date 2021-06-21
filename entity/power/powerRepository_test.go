@@ -23,12 +23,16 @@ func (suite *PowerCreationSuite) SetUpTest(checker *C) {
 	suite.spear = power.NewPower("Spear")
 	suite.spear.PowerType = power.Physical
 	suite.spear.ID = "spearLevel1"
-	suite.spear.AttackEffect.ToHitBonus = 1
+	suite.spear.AttackEffect = &power.AttackingEffect{
+		ToHitBonus: 1,
+	}
 
 	suite.spear2 = power.NewPower("Spear")
 	suite.spear2.PowerType = power.Physical
 	suite.spear2.ID = "spearLevel2"
-	suite.spear2.AttackEffect.ToHitBonus = 2
+	suite.spear2.AttackEffect  = &power.AttackingEffect{
+		ToHitBonus: 2,
+	}
 
 	newPowers := []*power.Power{suite.spear, suite.spear2}
 

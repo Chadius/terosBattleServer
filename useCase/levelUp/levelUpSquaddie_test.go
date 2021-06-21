@@ -199,13 +199,17 @@ func (suite *SquaddieChangePowersWithLevelUpBenefitsSuite) SetUpTest(checker *C)
 
 	suite.spear = power.NewPower("spear")
 	suite.spear.PowerType = power.Physical
-	suite.spear.AttackEffect.ToHitBonus = 1
+	suite.spear.AttackEffect = &power.AttackingEffect{
+		ToHitBonus: 1,
+	}
 	suite.spear.ID = "spearlvl1"
 	suite.teros.PowerCollection.PowerReferences = []*power.Reference{{Name: "spear", ID: "spearlvl1"}}
 
 	suite.spearLevel2 = power.NewPower("spear")
 	suite.spearLevel2.PowerType = power.Physical
-	suite.spearLevel2.AttackEffect.ToHitBonus = 1
+	suite.spearLevel2.AttackEffect = &power.AttackingEffect{
+		ToHitBonus: 1,
+	}
 	suite.spearLevel2.ID = "spearlvl2"
 	newPowers := []*power.Power{suite.spear, suite.spearLevel2}
 	suite.powerRepo.AddSlicePowerSource(newPowers)

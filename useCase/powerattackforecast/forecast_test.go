@@ -46,21 +46,27 @@ func (suite *CounterAttackCalculate) SetUpTest(checker *C) {
 
 	suite.spear = power.NewPower("spear")
 	suite.spear.PowerType = power.Physical
-	suite.spear.AttackEffect.ToHitBonus = 1
-	suite.spear.AttackEffect.DamageBonus = 1
-	suite.spear.AttackEffect.CanBeEquipped = true
-	suite.spear.AttackEffect.CanCounterAttack = true
+	suite.spear.AttackEffect = &power.AttackingEffect{
+		ToHitBonus: 1,
+		DamageBonus: 1,
+		CanBeEquipped: true,
+		CanCounterAttack: true,
+	}
 
 	suite.axe = power.NewPower("axe")
 	suite.axe.PowerType = power.Physical
-	suite.axe.AttackEffect.ToHitBonus = 1
-	suite.axe.AttackEffect.DamageBonus = 1
-	suite.axe.AttackEffect.CanBeEquipped = true
+	suite.axe.AttackEffect = &power.AttackingEffect{
+		ToHitBonus: 1,
+		DamageBonus: 1,
+		CanBeEquipped: true,
+	}
 
 	suite.fireball = power.NewPower("fireball")
 	suite.fireball.PowerType = power.Spell
-	suite.fireball.AttackEffect.DamageBonus = 3
-	suite.fireball.AttackEffect.CanBeEquipped = true
+	suite.fireball.AttackEffect = &power.AttackingEffect{
+		DamageBonus: 3,
+		CanBeEquipped: true,
+	}
 
 	suite.squaddieRepo = squaddie.NewSquaddieRepository()
 	suite.squaddieRepo.AddSquaddies([]*squaddie.Squaddie{suite.teros, suite.bandit, suite.mysticMage})

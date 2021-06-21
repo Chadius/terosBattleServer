@@ -33,12 +33,16 @@ func (suite *AttackContext) SetUpTest(checker *C) {
 
 	suite.spear = power.NewPower("spear")
 	suite.spear.PowerType = power.Physical
-	suite.spear.AttackEffect.ToHitBonus = 1
-	suite.spear.AttackEffect.DamageBonus = 1
+	suite.spear.AttackEffect = &power.AttackingEffect{
+		ToHitBonus: 1,
+		DamageBonus: 1,
+	}
 
 	suite.blot = power.NewPower("blot")
 	suite.blot.PowerType = power.Spell
-	suite.blot.AttackEffect.DamageBonus = 3
+	suite.blot.AttackEffect = &power.AttackingEffect{
+		DamageBonus : 3,
+	}
 
 	suite.bandit = squaddie.NewSquaddie("bandit")
 	suite.bandit.Identification.Name = "bandit"
