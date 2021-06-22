@@ -3,6 +3,7 @@ package powerattackforecast
 import (
 	"github.com/cserrant/terosBattleServer/entity/power"
 	"github.com/cserrant/terosBattleServer/entity/powerusagescenario"
+	"github.com/cserrant/terosBattleServer/usecase/repositories"
 )
 
 // AttackerContext lists the attacker's relevant information when attacking
@@ -21,7 +22,7 @@ type AttackerContext struct {
 	CriticalHitDamage int
 }
 
-func (context *AttackerContext)calculate(setup powerusagescenario.Setup, repositories *powerusagescenario.RepositoryCollection) {
+func (context *AttackerContext)calculate(setup powerusagescenario.Setup, repositories *repositories.RepositoryCollection) {
 	power := repositories.PowerRepo.GetPowerByID(setup.PowerID)
 
 	context.DamageType = power.PowerType
@@ -33,7 +34,7 @@ func (context *AttackerContext)calculate(setup powerusagescenario.Setup, reposit
 	context.calculateCriticalHit(setup, repositories)
 }
 
-func (context *AttackerContext) calculateToHitBonus(setup powerusagescenario.Setup, repositories *powerusagescenario.RepositoryCollection) {
+func (context *AttackerContext) calculateToHitBonus(setup powerusagescenario.Setup, repositories *repositories.RepositoryCollection) {
 	user := repositories.SquaddieRepo.GetOriginalSquaddieByID(setup.UserID)
 	power := repositories.PowerRepo.GetPowerByID(setup.PowerID)
 
@@ -45,7 +46,7 @@ func (context *AttackerContext) calculateToHitBonus(setup powerusagescenario.Set
 	}
 }
 
-func (context *AttackerContext) calculateRawDamage(setup powerusagescenario.Setup, repositories *powerusagescenario.RepositoryCollection) int {
+func (context *AttackerContext) calculateRawDamage(setup powerusagescenario.Setup, repositories *repositories.RepositoryCollection) int {
 	user := repositories.SquaddieRepo.GetOriginalSquaddieByID(setup.UserID)
 	powerToAttackWith := repositories.PowerRepo.GetPowerByID(setup.PowerID)
 	if powerToAttackWith.PowerType == power.Physical {
@@ -58,7 +59,7 @@ func (context *AttackerContext) calculateRawDamage(setup powerusagescenario.Setu
 	return 0
 }
 
-func (context *AttackerContext) calculateCriticalHit(setup powerusagescenario.Setup, repositories *powerusagescenario.RepositoryCollection) {
+func (context *AttackerContext) calculateCriticalHit(setup powerusagescenario.Setup, repositories *repositories.RepositoryCollection) {
 	power := repositories.PowerRepo.GetPowerByID(setup.PowerID)
 	context.CanCritical = power.CanCriticallyHit()
 	if context.CanCritical == false {

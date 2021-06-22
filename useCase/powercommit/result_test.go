@@ -7,6 +7,7 @@ import (
 	"github.com/cserrant/terosBattleServer/usecase/powerattackforecast"
 	"github.com/cserrant/terosBattleServer/usecase/powercommit"
 	"github.com/cserrant/terosBattleServer/usecase/powerequip"
+	"github.com/cserrant/terosBattleServer/usecase/repositories"
 	"github.com/cserrant/terosBattleServer/utility/testutility"
 	. "gopkg.in/check.v1"
 	"testing"
@@ -137,7 +138,7 @@ func (suite *resultOnAttack) SetUpTest(checker *C) {
 			Targets:         []string{suite.bandit.Identification.ID},
 			IsCounterAttack: false,
 		},
-		Repositories: &powerusagescenario.RepositoryCollection{
+		Repositories: &repositories.RepositoryCollection{
 			SquaddieRepo:    suite.squaddieRepo,
 			PowerRepo:       suite.powerRepo,
 		},
@@ -153,7 +154,7 @@ func (suite *resultOnAttack) SetUpTest(checker *C) {
 			Targets:         []string{suite.bandit.Identification.ID},
 			IsCounterAttack: false,
 		},
-		Repositories: &powerusagescenario.RepositoryCollection{
+		Repositories: &repositories.RepositoryCollection{
 			SquaddieRepo:    suite.squaddieRepo,
 			PowerRepo:       suite.powerRepo,
 		},
@@ -169,7 +170,7 @@ func (suite *resultOnAttack) SetUpTest(checker *C) {
 			Targets:         []string{suite.mysticMage.Identification.ID},
 			IsCounterAttack: false,
 		},
-		Repositories: &powerusagescenario.RepositoryCollection{
+		Repositories: &repositories.RepositoryCollection{
 			SquaddieRepo:    suite.squaddieRepo,
 			PowerRepo:       suite.powerRepo,
 		},
@@ -182,7 +183,7 @@ func (suite *resultOnAttack) SetUpTest(checker *C) {
 			Targets:         []string{suite.bandit.Identification.ID, suite.bandit2.Identification.ID},
 			IsCounterAttack: false,
 		},
-		Repositories: &powerusagescenario.RepositoryCollection{
+		Repositories: &repositories.RepositoryCollection{
 			SquaddieRepo:    suite.squaddieRepo,
 			PowerRepo:       suite.powerRepo,
 		},
@@ -458,7 +459,7 @@ func (suite *EquipPowerWhenCommitting) SetUpTest(checker *C) {
 			Targets:         []string{suite.bandit.Identification.ID},
 			IsCounterAttack: false,
 		},
-		Repositories: &powerusagescenario.RepositoryCollection{
+		Repositories: &repositories.RepositoryCollection{
 			SquaddieRepo:    suite.squaddieRepo,
 			PowerRepo:       suite.powerRepo,
 		},
@@ -474,7 +475,7 @@ func (suite *EquipPowerWhenCommitting) SetUpTest(checker *C) {
 			Targets:         []string{suite.bandit.Identification.ID},
 			IsCounterAttack: false,
 		},
-		Repositories: &powerusagescenario.RepositoryCollection{
+		Repositories: &repositories.RepositoryCollection{
 			SquaddieRepo:    suite.squaddieRepo,
 			PowerRepo:       suite.powerRepo,
 		},
@@ -490,7 +491,7 @@ func (suite *EquipPowerWhenCommitting) SetUpTest(checker *C) {
 			Targets:         []string{suite.bandit.Identification.ID},
 			IsCounterAttack: false,
 		},
-		Repositories: &powerusagescenario.RepositoryCollection{
+		Repositories: &repositories.RepositoryCollection{
 			SquaddieRepo:    suite.squaddieRepo,
 			PowerRepo:       suite.powerRepo,
 		},

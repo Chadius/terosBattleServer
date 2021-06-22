@@ -5,6 +5,7 @@ import (
 	"github.com/cserrant/terosBattleServer/entity/powerusagescenario"
 	"github.com/cserrant/terosBattleServer/usecase/powerattackforecast"
 	"github.com/cserrant/terosBattleServer/usecase/powerequip"
+	"github.com/cserrant/terosBattleServer/usecase/repositories"
 	"github.com/cserrant/terosBattleServer/utility"
 )
 
@@ -61,7 +62,7 @@ func (result *Result) isCounterAttackPossible(calculation powerattackforecast.Ca
 	return true
 }
 
-func (result *Result) calculateResultForThisTarget(setup *powerusagescenario.Setup, attack *powerattackforecast.AttackForecast, repositories *powerusagescenario.RepositoryCollection) *ResultPerTarget {
+func (result *Result) calculateResultForThisTarget(setup *powerusagescenario.Setup, attack *powerattackforecast.AttackForecast, repositories *repositories.RepositoryCollection) *ResultPerTarget {
 	results := &ResultPerTarget{
 		UserID:   setup.UserID,
 		TargetID: setup.Targets[0],

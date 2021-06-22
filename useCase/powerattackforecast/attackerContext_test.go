@@ -5,6 +5,7 @@ import (
 	"github.com/cserrant/terosBattleServer/entity/powerusagescenario"
 	"github.com/cserrant/terosBattleServer/entity/squaddie"
 	"github.com/cserrant/terosBattleServer/usecase/powerattackforecast"
+	"github.com/cserrant/terosBattleServer/usecase/repositories"
 	. "gopkg.in/check.v1"
 )
 
@@ -60,7 +61,7 @@ func (suite *AttackContext) SetUpTest(checker *C) {
 			Targets:         []string{suite.bandit.Identification.ID},
 			IsCounterAttack: false,
 		},
-		Repositories: &powerusagescenario.RepositoryCollection{
+		Repositories: &repositories.RepositoryCollection{
 			SquaddieRepo:    suite.squaddieRepo,
 			PowerRepo:       suite.powerRepo,
 		},
@@ -73,7 +74,7 @@ func (suite *AttackContext) SetUpTest(checker *C) {
 			Targets:         []string{suite.bandit.Identification.ID},
 			IsCounterAttack: false,
 		},
-		Repositories: &powerusagescenario.RepositoryCollection{
+		Repositories: &repositories.RepositoryCollection{
 			SquaddieRepo:    suite.squaddieRepo,
 			PowerRepo:       suite.powerRepo,
 		},

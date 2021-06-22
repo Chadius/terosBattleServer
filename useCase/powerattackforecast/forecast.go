@@ -3,19 +3,20 @@ package powerattackforecast
 import (
 	"github.com/cserrant/terosBattleServer/entity/powerusagescenario"
 	"github.com/cserrant/terosBattleServer/usecase/powerequip"
+	"github.com/cserrant/terosBattleServer/usecase/repositories"
 )
 
 // Forecast will store the information needed to explain what will happen when a squaddie
 //  uses a given power. It can be asked multiple questions.
 type Forecast struct {
 	Setup                     powerusagescenario.Setup
-	Repositories *powerusagescenario.RepositoryCollection
+	Repositories *repositories.RepositoryCollection
 	ForecastedResultPerTarget []Calculation
 }
 
 // Calculation holds the results of the forecast.
 type Calculation struct {
-	Repositories *powerusagescenario.RepositoryCollection
+	Repositories *repositories.RepositoryCollection
 	Setup *powerusagescenario.Setup
 	Attack	*AttackForecast
 	CounterAttackSetup *powerusagescenario.Setup
@@ -46,7 +47,7 @@ func (forecast *Forecast) CalculateForecast() {
 				Targets:         []string{targetID},
 				IsCounterAttack: false,
 			},
-			Repositories: &powerusagescenario.RepositoryCollection{
+			Repositories: &repositories.RepositoryCollection{
 				SquaddieRepo:    forecast.Repositories.SquaddieRepo,
 				PowerRepo:       forecast.Repositories.PowerRepo,
 			},
@@ -80,7 +81,7 @@ func (forecast *Forecast) createCounterAttackForecast(counterAttackingSquaddieID
 
 	counterAttackForecast := Forecast{
 		Setup:                     counterForecastSetup,
-		Repositories: &powerusagescenario.RepositoryCollection{
+		Repositories: &repositories.RepositoryCollection{
 			SquaddieRepo:    forecast.Repositories.SquaddieRepo,
 			PowerRepo:       forecast.Repositories.PowerRepo,
 		},

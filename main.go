@@ -7,6 +7,7 @@ import (
 	"github.com/cserrant/terosBattleServer/usecase/powerattackforecast"
 	"github.com/cserrant/terosBattleServer/usecase/powercommit"
 	"github.com/cserrant/terosBattleServer/usecase/powerequip"
+	"github.com/cserrant/terosBattleServer/usecase/repositories"
 	"github.com/cserrant/terosBattleServer/utility"
 	"io/ioutil"
 	"log"
@@ -34,7 +35,7 @@ func main() {
 
 	powerForecast := &powerattackforecast.Forecast{
 		Setup: powerSetup,
-		Repositories: &powerusagescenario.RepositoryCollection{
+		Repositories: &repositories.RepositoryCollection{
 			SquaddieRepo:    squaddieRepo,
 			PowerRepo:       powerRepo,
 		},
@@ -67,7 +68,7 @@ func printAttackForecast(forecast *powerattackforecast.Calculation) {
 	}
 }
 
-func printPartOfAttackForecast(forecast *powerattackforecast.AttackForecast, setup *powerusagescenario.Setup, repositories *powerusagescenario.RepositoryCollection) {
+func printPartOfAttackForecast(forecast *powerattackforecast.AttackForecast, setup *powerusagescenario.Setup, repositories *repositories.RepositoryCollection) {
 	squaddieRepo := repositories.SquaddieRepo
 	powerRepo := repositories.PowerRepo
 
@@ -88,7 +89,7 @@ func printPartOfAttackForecast(forecast *powerattackforecast.AttackForecast, set
 	//println("Forecasted Barrier damage            ", forecast.VersusContext.NormalDamage.TotalBarrierBurnt)
 }
 
-func printAttackReport(result *powercommit.ResultPerTarget, repositories *powerusagescenario.RepositoryCollection) {
+func printAttackReport(result *powercommit.ResultPerTarget, repositories *repositories.RepositoryCollection) {
 	squaddieRepo := repositories.SquaddieRepo
 	powerRepo := repositories.PowerRepo
 

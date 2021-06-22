@@ -3,6 +3,7 @@ package powerattackforecast
 import (
 	"github.com/cserrant/terosBattleServer/entity/power"
 	"github.com/cserrant/terosBattleServer/entity/powerusagescenario"
+	"github.com/cserrant/terosBattleServer/usecase/repositories"
 )
 
 // DefenderContext lists the target's relevant information when under attack
@@ -16,18 +17,18 @@ type DefenderContext struct {
 	BarrierResistance int
 }
 
-func (context *DefenderContext) getPower(setup *powerusagescenario.Setup, repositories *powerusagescenario.RepositoryCollection) *power.Power {
+func (context *DefenderContext) getPower(setup *powerusagescenario.Setup, repositories *repositories.RepositoryCollection) *power.Power {
 	return repositories.PowerRepo.GetPowerByID(setup.PowerID)
 }
 
-func (context *DefenderContext) calculate(setup *powerusagescenario.Setup, repositories *powerusagescenario.RepositoryCollection) {
+func (context *DefenderContext) calculate(setup *powerusagescenario.Setup, repositories *repositories.RepositoryCollection) {
 	context.TotalToHitPenalty = context.calculateTotalToHitPenalty(setup, repositories)
 	context.ArmorResistance = context.calculateArmorResistance(setup, repositories)
 	context.BarrierResistance = context.calculateBarrierResistance(repositories)
 	context.HitPoints = context.calculateHitPoints(repositories)
 }
 
-func (context *DefenderContext) calculateTotalToHitPenalty(setup *powerusagescenario.Setup, repositories *powerusagescenario.RepositoryCollection) int {
+func (context *DefenderContext) calculateTotalToHitPenalty(setup *powerusagescenario.Setup, repositories *repositories.RepositoryCollection) int {
 	attackingPower := context.getPower(setup, repositories)
 	target := repositories.SquaddieRepo.GetOriginalSquaddieByID(context.TargetID)
 
@@ -41,7 +42,7 @@ func (context *DefenderContext) calculateTotalToHitPenalty(setup *powerusagescen
 	return 0
 }
 
-func (context *DefenderContext) calculateArmorResistance(setup *powerusagescenario.Setup, repositories *powerusagescenario.RepositoryCollection) int {
+func (context *DefenderContext) calculateArmorResistance(setup *powerusagescenario.Setup, repositories *repositories.RepositoryCollection) int {
 	attackingPower := context.getPower(setup, repositories)
 	target := repositories.SquaddieRepo.GetOriginalSquaddieByID(context.TargetID)
 
@@ -51,12 +52,12 @@ func (context *DefenderContext) calculateArmorResistance(setup *powerusagescenar
 	return 0
 }
 
-func (context *DefenderContext) calculateBarrierResistance(repositories *powerusagescenario.RepositoryCollection) int {
+func (context *DefenderContext) calculateBarrierResistance(repositories *repositories.RepositoryCollection) int {
 	target := repositories.SquaddieRepo.GetOriginalSquaddieByID(context.TargetID)
 	return target.Defense.CurrentBarrier
 }
 
-func (context *DefenderContext) calculateHitPoints(repositories *powerusagescenario.RepositoryCollection) int {
+func (context *DefenderContext) calculateHitPoints(repositories *repositories.RepositoryCollection) int {
 	target := repositories.SquaddieRepo.GetOriginalSquaddieByID(context.TargetID)
 	return target.Defense.CurrentHitPoints
 }

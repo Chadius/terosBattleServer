@@ -4,6 +4,7 @@ import (
 	"github.com/cserrant/terosBattleServer/entity/power"
 	"github.com/cserrant/terosBattleServer/entity/squaddie"
 	"github.com/cserrant/terosBattleServer/usecase/powerequip"
+	"github.com/cserrant/terosBattleServer/usecase/repositories"
 	"github.com/cserrant/terosBattleServer/usecase/squaddiestats"
 	. "gopkg.in/check.v1"
 	"testing"
@@ -19,6 +20,8 @@ type squaddieOffense struct {
 
 	powerRepo 		*power.Repository
 	squaddieRepo 	*squaddie.Repository
+
+	repos *repositories.RepositoryCollection
 }
 
 var _ = Suite(&squaddieOffense{})
@@ -29,9 +32,11 @@ func (suite *squaddieOffense) SetUpTest(checker *C) {
 
 	suite.spear = power.NewPower("spear")
 	suite.spear.PowerType = power.Physical
+	suite.spear.ID = "powerSpear"
 
 	suite.blot = power.NewPower("blot")
 	suite.blot.PowerType = power.Spell
+	suite.blot.ID = "powerBlot"
 
 	suite.squaddieRepo = squaddie.NewSquaddieRepository()
 	suite.squaddieRepo.AddSquaddies([]*squaddie.Squaddie{suite.teros})
@@ -47,12 +52,15 @@ func (suite *squaddieOffense) SetUpTest(checker *C) {
 		},
 		suite.powerRepo,
 	)
+
+	suite.repos = &repositories.RepositoryCollection{
+		SquaddieRepo: suite.squaddieRepo,
+		PowerRepo: suite.powerRepo,
+	}
 }
 
 func (suite *squaddieOffense) TestSquaddieMeasuresAim(checker *C) {
 	suite.teros.Offense.Aim = 1
-	//suite.teros.Offense.Strength = 2
-	//suite.teros.Offense.Mind = 3
 
 	suite.spear.AttackEffect = &power.AttackingEffect{
 		ToHitBonus:                1,
@@ -75,22 +83,22 @@ func (suite *squaddieOffense) TestSquaddieMeasuresAim(checker *C) {
 		CanCounterAttack:          false,
 	}
 
-	spearAim, spearErr := squaddiestats.GetSquaddieAimWithPower(suite.teros.Identification.ID, suite.spear.ID, suite.squaddieRepo, suite.powerRepo)
+	spearAim, spearErr := squaddiestats.GetSquaddieAimWithPower(suite.teros.Identification.ID, suite.spear.ID, suite.repos)
 	checker.Assert(spearErr, IsNil)
 	checker.Assert(spearAim, Equals, 2)
 
-	blotAim, blotErr := squaddiestats.GetSquaddieAimWithPower(suite.teros.Identification.ID, suite.blot.ID, suite.squaddieRepo, suite.powerRepo)
+	blotAim, blotErr := squaddiestats.GetSquaddieAimWithPower(suite.teros.Identification.ID, suite.blot.ID, suite.repos)
 	checker.Assert(blotErr, IsNil)
 	checker.Assert(blotAim, Equals, 3)
 }
 
 func (suite *squaddieOffense) TestReturnsAnErrorIfSquaddieDoesNotExist(checker *C) {
-	_, err := squaddiestats.GetSquaddieAimWithPower("does not exist", suite.spear.ID, suite.squaddieRepo, suite.powerRepo)
+	_, err := squaddiestats.GetSquaddieAimWithPower("does not exist", suite.spear.ID, suite.repos)
 	checker.Assert(err, ErrorMatches, "squaddie could not be found, ID: does not exist")
 }
 
 func (suite *squaddieOffense) TestReturnsAnErrorIfPowerDoesNotExist(checker *C) {
-	_, err := squaddiestats.GetSquaddieAimWithPower(suite.teros.Identification.ID, "does not exist", suite.squaddieRepo, suite.powerRepo)
+	_, err := squaddiestats.GetSquaddieAimWithPower(suite.teros.Identification.ID, "does not exist", suite.repos)
 	checker.Assert(err, ErrorMatches, "power could not be found, ID: does not exist")
 }
 
@@ -99,7 +107,6 @@ func (suite *squaddieOffense) TestReturnsAnErrorIfPowerHasNoOffense(checker *C) 
 	wait.PowerType = power.Physical
 	wait.ID = "powerWait"
 
-	suite.powerRepo = power.NewPowerRepository()
 	suite.powerRepo.AddSlicePowerSource([]*power.Power{wait})
 
 	powerequip.LoadAllOfSquaddieInnatePowers(
@@ -112,7 +119,7 @@ func (suite *squaddieOffense) TestReturnsAnErrorIfPowerHasNoOffense(checker *C) 
 		suite.powerRepo,
 	)
 
-	_, err := squaddiestats.GetSquaddieAimWithPower(suite.teros.Identification.ID, wait.ID, suite.squaddieRepo, suite.powerRepo)
+	_, err := squaddiestats.GetSquaddieAimWithPower(suite.teros.Identification.ID, wait.ID, suite.repos)
 	checker.Assert(err, ErrorMatches, "cannot attack with power, ID: powerWait")
 }
 
@@ -132,7 +139,7 @@ func (suite *squaddieOffense) TestGetRawDamageOfPhysicalPower(checker *C) {
 		},
 	}
 
-	spearDamage, spearErr := squaddiestats.GetSquaddieRawDamageWithPower(suite.teros.Identification.ID, suite.spear.ID, suite.squaddieRepo, suite.powerRepo)
+	spearDamage, spearErr := squaddiestats.GetSquaddieRawDamageWithPower(suite.teros.Identification.ID, suite.spear.ID, suite.repos)
 	checker.Assert(spearErr, IsNil)
 	checker.Assert(spearDamage, Equals, 2)
 }
@@ -148,14 +155,109 @@ func (suite *squaddieOffense) TestGetRawDamageOfSpellPower(checker *C) {
 		CanCounterAttack:          false,
 	}
 
-	blotDamage, blotErr := squaddiestats.GetSquaddieRawDamageWithPower(suite.teros.Identification.ID, suite.blot.ID, suite.squaddieRepo, suite.powerRepo)
+	blotDamage, blotErr := squaddiestats.GetSquaddieRawDamageWithPower(suite.teros.Identification.ID, suite.blot.ID, suite.repos)
 	checker.Assert(blotErr, IsNil)
 	checker.Assert(blotDamage, Equals, 3)
 }
 
-// func (suite *squaddieOffense) TestGetCriticalThresholdOfPower(checker *C) {
-// func (suite *squaddieOffense) TestReturnsAnErrorIfPowerDoesNotCrit(checker *C) {
-// func (suite *squaddieOffense) TestGetCriticalDamageOfPower(checker *C) {
-// func (suite *squaddieOffense) TestSquaddieCanCounterAttackWithPower(checker *C) {
-// func (suite *squaddieOffense) TestSquaddieShowsCounterAttackToHit(checker *C) {
-// func (suite *squaddieOffense) TestGetTotalBarrierBurnOfAttacks(checker *C) {
+func (suite *squaddieOffense) TestGetCriticalThresholdOfPower(checker *C) {
+	suite.spear.AttackEffect = &power.AttackingEffect{
+		ToHitBonus:                1,
+		DamageBonus:               1,
+		ExtraBarrierBurn:          0,
+		CanBeEquipped:             true,
+		CanCounterAttack:          true,
+		CounterAttackToHitPenalty: -2,
+		CriticalEffect:            &power.CriticalEffect{
+			CriticalHitThresholdBonus: 2,
+			Damage:                    5,
+		},
+	}
+
+	spearCritThreat, critErr := squaddiestats.GetSquaddieCriticalThresholdWithPower(suite.teros.Identification.ID, suite.spear.ID, suite.repos)
+	checker.Assert(critErr, IsNil)
+	checker.Assert(spearCritThreat, Equals, 4)
+}
+
+func (suite *squaddieOffense) TestReturnsAnErrorIfPowerDoesNotCrit(checker *C) {
+	suite.blot.AttackEffect = &power.AttackingEffect{
+		ToHitBonus:                1,
+		DamageBonus:               1,
+		ExtraBarrierBurn:          0,
+		CanBeEquipped:             true,
+		CanCounterAttack:          true,
+		CounterAttackToHitPenalty: -2,
+	}
+
+	_, critErr := squaddiestats.GetSquaddieCriticalThresholdWithPower(suite.teros.Identification.ID, suite.blot.ID, suite.repos)
+	checker.Assert(critErr, ErrorMatches, "cannot critical hit with power, ID: powerBlot")
+}
+
+func (suite *squaddieOffense) TestGetCriticalDamageOfPower(checker *C) {
+	suite.teros.Offense.Strength = 1
+
+	suite.spear.AttackEffect = &power.AttackingEffect{
+		ToHitBonus:                1,
+		DamageBonus:               1,
+		ExtraBarrierBurn:          0,
+		CanBeEquipped:             true,
+		CanCounterAttack:          true,
+		CounterAttackToHitPenalty: -2,
+		CriticalEffect:            &power.CriticalEffect{
+			CriticalHitThresholdBonus: 2,
+			Damage:                    5,
+		},
+	}
+
+	spearDamage, damageErr := squaddiestats.GetSquaddieCriticalRawDamageWithPower(suite.teros.Identification.ID, suite.spear.ID, suite.repos)
+	checker.Assert(damageErr, IsNil)
+	checker.Assert(spearDamage, Equals, 7)
+}
+
+func (suite *squaddieOffense) TestSquaddieCanCounterAttackWithPower(checker *C) {
+	suite.spear.AttackEffect = &power.AttackingEffect{
+		CanCounterAttack:          true,
+	}
+
+	suite.blot.AttackEffect = &power.AttackingEffect{
+		CanCounterAttack:          false,
+	}
+
+	spearCanCounter, spearErr := squaddiestats.GetSquaddieCanCounterAttackWithPower(suite.teros.Identification.ID, suite.spear.ID, suite.repos)
+	checker.Assert(spearErr, IsNil)
+	checker.Assert(spearCanCounter, Equals, true)
+
+	blotCanCounter, blotErr := squaddiestats.GetSquaddieCanCounterAttackWithPower(suite.teros.Identification.ID, suite.blot.ID, suite.repos)
+	checker.Assert(blotErr, IsNil)
+	checker.Assert(blotCanCounter, Equals, false)
+}
+
+func (suite *squaddieOffense) TestSquaddieShowsCounterAttackToHit(checker *C) {
+	suite.teros.Offense.Aim = 2
+
+	suite.spear.AttackEffect = &power.AttackingEffect{
+		ToHitBonus: 1,
+		CanCounterAttack:          true,
+		CounterAttackToHitPenalty: -2,
+	}
+
+	spearAim, spearErr := squaddiestats.GetSquaddieCounterAttackAimWithPower(suite.teros.Identification.ID, suite.spear.ID, suite.repos)
+	checker.Assert(spearErr, IsNil)
+	checker.Assert(spearAim, Equals, 1)
+}
+
+func (suite *squaddieOffense) TestGetTotalBarrierBurnOfAttacks(checker *C) {
+	suite.teros.Offense.Mind = 3
+
+	suite.blot.AttackEffect = &power.AttackingEffect{
+		ToHitBonus:                2,
+		DamageBonus:               0,
+		ExtraBarrierBurn:          2,
+		CanBeEquipped:             true,
+		CanCounterAttack:          false,
+	}
+
+	blotDamage, blotErr := squaddiestats.GetSquaddieExtraBarrierBurnWithPower(suite.teros.Identification.ID, suite.blot.ID, suite.repos)
+	checker.Assert(blotErr, IsNil)
+	checker.Assert(blotDamage, Equals, 2)
+}
