@@ -11,8 +11,10 @@ type ToHitComparison struct {
 type DamageDistribution struct {
 	DamageAbsorbedByArmor   int
 	DamageAbsorbedByBarrier int
-	DamageDealt             int
+	RawDamageDealt          int
 	ExtraBarrierBurnt       int
-	TotalBarrierBurnt       int
+	TotalRawBarrierBurnt    int
 	IsFatalToTarget         bool
+	ActualBarrierBurn       int
+	ActualDamageTaken       int
 }

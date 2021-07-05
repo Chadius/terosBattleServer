@@ -26,6 +26,7 @@ type Power struct {
 	Reference `yaml:",inline"`
 	PowerType Type `json:"power_type" yaml:"power_type"`
 	AttackEffect *AttackingEffect  `json:"attack_effect" yaml:"attack_effect"`
+	HealingEffect *HealingEffect  `json:"healing_effect" yaml:"healing_effect"`
 }
 
 // GetReference returns a new PowerReference.

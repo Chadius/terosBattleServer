@@ -47,13 +47,13 @@ func (context *VersusContext) setDamageBreakdown(damageDealtToTarget int, attack
 	context.setBarrierBurntAndDamageAbsorbed(distribution, attackerContext, defenderContext, damageDealtToTarget)
 
 	damageDealtToTarget -= distribution.DamageAbsorbedByBarrier
-	distribution.TotalBarrierBurnt = distribution.DamageAbsorbedByBarrier + distribution.ExtraBarrierBurnt
+	distribution.TotalRawBarrierBurnt = distribution.DamageAbsorbedByBarrier + distribution.ExtraBarrierBurnt
 
 	distribution.DamageAbsorbedByArmor = context.calculateDamageAbsorbedByArmor(attackerContext, defenderContext, damageDealtToTarget)
 	damageDealtToTarget -= distribution.DamageAbsorbedByArmor
 
-	distribution.DamageDealt = damageDealtToTarget
-	distribution.IsFatalToTarget = distribution.DamageDealt >= defenderContext.HitPoints
+	distribution.RawDamageDealt = damageDealtToTarget
+	distribution.IsFatalToTarget = distribution.RawDamageDealt >= defenderContext.HitPoints
 
 	return distribution
 }
@@ -75,7 +75,7 @@ func (context *VersusContext) setBarrierBurntAndDamageAbsorbed(distribution *dam
 	if barrierAbsorbsAllDamageAndExtraBurn {
 		distribution.ExtraBarrierBurnt = attackerContext.ExtraBarrierBurn
 		distribution.DamageAbsorbedByBarrier = damageDealtToTarget
-		distribution.TotalBarrierBurnt = distribution.DamageAbsorbedByBarrier + distribution.ExtraBarrierBurnt
+		distribution.TotalRawBarrierBurnt = distribution.DamageAbsorbedByBarrier + distribution.ExtraBarrierBurnt
 		return
 	}
 
@@ -83,7 +83,7 @@ func (context *VersusContext) setBarrierBurntAndDamageAbsorbed(distribution *dam
 	if !barrierAbsorbsExtraBarrierBurn {
 		distribution.ExtraBarrierBurnt = defenderContext.BarrierResistance
 		distribution.DamageAbsorbedByBarrier = 0
-		distribution.TotalBarrierBurnt = distribution.ExtraBarrierBurnt
+		distribution.TotalRawBarrierBurnt = distribution.ExtraBarrierBurnt
 		return
 	}
 
@@ -93,13 +93,13 @@ func (context *VersusContext) setBarrierBurntAndDamageAbsorbed(distribution *dam
 	if remainingBarrierAbsorbsDamage {
 		distribution.ExtraBarrierBurnt = attackerContext.ExtraBarrierBurn
 		distribution.DamageAbsorbedByBarrier = damageDealtToTarget
-		distribution.TotalBarrierBurnt = distribution.DamageAbsorbedByBarrier + distribution.ExtraBarrierBurnt
+		distribution.TotalRawBarrierBurnt = distribution.DamageAbsorbedByBarrier + distribution.ExtraBarrierBurnt
 		return
 	}
 
 	distribution.ExtraBarrierBurnt = attackerContext.ExtraBarrierBurn
 	distribution.DamageAbsorbedByBarrier = barrierRemainingAfterExtraBarrierBurn
-	distribution.TotalBarrierBurnt = defenderContext.BarrierResistance
+	distribution.TotalRawBarrierBurnt = defenderContext.BarrierResistance
 }
 
 func (context *VersusContext) setCriticalHitChance(attackerContext AttackerContext) {

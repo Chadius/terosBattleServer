@@ -88,8 +88,8 @@ func printPartOfAttackForecast(forecast *powerattackforecast.AttackForecast, set
 	}
 
 	//println("Chance to hit (out of 36) ", hitChance)
-	println("Forecasted Damage              ", forecast.VersusContext.NormalDamage.DamageDealt)
-	//println("Forecasted Barrier damage            ", forecast.VersusContext.NormalDamage.TotalBarrierBurnt)
+	println("Forecasted Damage              ", forecast.VersusContext.NormalDamage.RawDamageDealt)
+	//println("Forecasted Barrier damage            ", forecast.VersusContext.NormalDamage.TotalRawBarrierBurnt)
 }
 
 func printAttackReport(result *powercommit.ResultPerTarget, repositories *repositories.RepositoryCollection) {
@@ -114,9 +114,9 @@ func printAttackReport(result *powercommit.ResultPerTarget, repositories *reposi
 	} else {
 		println("Hit")
 	}
-	damageTaken := "  deals " + strconv.Itoa(result.Attack.Damage.DamageDealt)
-	if result.Attack.Damage.TotalBarrierBurnt > 0 {
-		damageTaken += " damage, " + strconv.Itoa(result.Attack.Damage.TotalBarrierBurnt) + " barrier burn"
+	damageTaken := "  deals " + strconv.Itoa(result.Attack.Damage.RawDamageDealt)
+	if result.Attack.Damage.TotalRawBarrierBurnt > 0 {
+		damageTaken += " damage, " + strconv.Itoa(result.Attack.Damage.TotalRawBarrierBurnt) + " barrier burn"
 	}
 	println(damageTaken)
 

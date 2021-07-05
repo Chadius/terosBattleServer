@@ -90,9 +90,9 @@ func (result *Result) calculateResultForThisTarget(setup *powerusagescenario.Set
 		results.Attack.Damage = &damagedistribution.DamageDistribution{
 			DamageAbsorbedByArmor:   0,
 			DamageAbsorbedByBarrier: 0,
-			DamageDealt:             0,
+			RawDamageDealt:          0,
 			ExtraBarrierBurnt:       0,
-			TotalBarrierBurnt:       0,
+			TotalRawBarrierBurnt:    0,
 		}
 	} else if results.Attack.CriticallyHitTarget {
 		results.Attack.Damage = attack.VersusContext.CriticalHitDamage

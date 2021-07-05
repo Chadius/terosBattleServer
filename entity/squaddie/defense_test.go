@@ -62,11 +62,22 @@ func (suite *SquaddieDefenseSuite) TestDamageDistributionLowersBarrierAndHealth(
 	suite.teros.Defense.TakeDamageDistribution(
 		&damagedistribution.DamageDistribution{
 			DamageAbsorbedByBarrier: suite.teros.Defense.MaxBarrier * 3,
-			DamageDealt:             1,
+			RawDamageDealt:          1,
 		},
 	)
 	checker.Assert(suite.teros.Defense.CurrentBarrier, Equals, 0)
 	checker.Assert(suite.teros.Defense.CurrentHitPoints, Equals, suite.teros.Defense.MaxHitPoints - 1)
+}
+
+func (suite *SquaddieDefenseSuite) TestDamageDistributionShowsCappedDamage(checker *C) {
+	suite.teros.Defense.CurrentBarrier = 1
+	damageTaken := &damagedistribution.DamageDistribution{
+		DamageAbsorbedByBarrier: suite.teros.Defense.MaxBarrier * 3,
+		RawDamageDealt:          suite.teros.Defense.MaxHitPoints * 3,
+	}
+	suite.teros.Defense.TakeDamageDistribution(damageTaken)
+	checker.Assert(damageTaken.ActualBarrierBurn, Equals, 1)
+	checker.Assert(damageTaken.ActualDamageTaken, Equals, suite.teros.Defense.MaxHitPoints)
 }
 
 func (suite *SquaddieDefenseSuite) TestSquaddiesAreDeadWhenAtZeroHitPoints(checker *C) {

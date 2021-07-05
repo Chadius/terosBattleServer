@@ -213,7 +213,7 @@ func (suite *resultOnAttack) TestAttackCanMiss(checker *C) {
 	checker.Assert(suite.resultSpearOnBandit.ResultPerTarget[0].Attack.CriticallyHitTarget, Equals, false)
 	checker.Assert(suite.resultSpearOnBandit.ResultPerTarget[0].Attack.Damage.DamageAbsorbedByBarrier, Equals, 0)
 	checker.Assert(suite.resultSpearOnBandit.ResultPerTarget[0].Attack.Damage.DamageAbsorbedByArmor, Equals, 0)
-	checker.Assert(suite.resultSpearOnBandit.ResultPerTarget[0].Attack.Damage.DamageDealt, Equals, 0)
+	checker.Assert(suite.resultSpearOnBandit.ResultPerTarget[0].Attack.Damage.RawDamageDealt, Equals, 0)
 }
 
 func (suite *resultOnAttack) TestAttackCanHitButNotCritically(checker *C) {
@@ -234,12 +234,12 @@ func (suite *resultOnAttack) TestAttackCanHitButNotCritically(checker *C) {
 	checker.Assert(suite.resultBlotOnBandit.ResultPerTarget[0].Attack.CriticallyHitTarget, Equals, false)
 	checker.Assert(suite.resultBlotOnBandit.ResultPerTarget[0].Attack.Damage.DamageAbsorbedByBarrier, Equals, 3)
 	checker.Assert(suite.resultBlotOnBandit.ResultPerTarget[0].Attack.Damage.DamageAbsorbedByArmor, Equals, 0)
-	checker.Assert(suite.resultBlotOnBandit.ResultPerTarget[0].Attack.Damage.DamageDealt, Equals, 2)
+	checker.Assert(suite.resultBlotOnBandit.ResultPerTarget[0].Attack.Damage.RawDamageDealt, Equals, 2)
 
 	checker.Assert(
 		suite.bandit.Defense.CurrentHitPoints,
 		Equals,
-		suite.bandit.Defense.MaxHitPoints - suite.resultBlotOnBandit.ResultPerTarget[0].Attack.Damage.DamageDealt,
+		suite.bandit.Defense.MaxHitPoints - suite.resultBlotOnBandit.ResultPerTarget[0].Attack.Damage.RawDamageDealt,
 	)
 }
 
@@ -269,7 +269,7 @@ func (suite *resultOnAttack) TestAttackCanHitCritically(checker *C) {
 	checker.Assert(suite.resultBlotOnBandit.ResultPerTarget[0].Attack.CriticallyHitTarget, Equals, true)
 	checker.Assert(suite.resultBlotOnBandit.ResultPerTarget[0].Attack.Damage.DamageAbsorbedByBarrier, Equals, 3)
 	checker.Assert(suite.resultBlotOnBandit.ResultPerTarget[0].Attack.Damage.DamageAbsorbedByArmor, Equals, 0)
-	checker.Assert(suite.resultBlotOnBandit.ResultPerTarget[0].Attack.Damage.DamageDealt, Equals, 5)
+	checker.Assert(suite.resultBlotOnBandit.ResultPerTarget[0].Attack.Damage.RawDamageDealt, Equals, 5)
 
 	checker.Assert(
 		suite.bandit.Defense.CurrentHitPoints,
@@ -307,12 +307,12 @@ func (suite *resultOnAttack) TestCounterAttacks(checker *C) {
 	checker.Assert(suite.resultSpearOnBandit.ResultPerTarget[1].Attack.CriticallyHitTarget, Equals, false)
 	checker.Assert(suite.resultSpearOnBandit.ResultPerTarget[1].Attack.Damage.DamageAbsorbedByBarrier, Equals, 0)
 	checker.Assert(suite.resultSpearOnBandit.ResultPerTarget[1].Attack.Damage.DamageAbsorbedByArmor, Equals, 0)
-	checker.Assert(suite.resultSpearOnBandit.ResultPerTarget[1].Attack.Damage.DamageDealt, Equals, 3)
+	checker.Assert(suite.resultSpearOnBandit.ResultPerTarget[1].Attack.Damage.RawDamageDealt, Equals, 3)
 
 	checker.Assert(
 		suite.teros.Defense.CurrentHitPoints,
 		Equals,
-		suite.teros.Defense.MaxHitPoints - suite.resultSpearOnBandit.ResultPerTarget[1].Attack.Damage.DamageDealt,
+		suite.teros.Defense.MaxHitPoints - suite.resultSpearOnBandit.ResultPerTarget[1].Attack.Damage.RawDamageDealt,
 	)
 }
 

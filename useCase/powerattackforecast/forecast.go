@@ -1,6 +1,7 @@
 package powerattackforecast
 
 import (
+	"github.com/cserrant/terosBattleServer/entity/power"
 	"github.com/cserrant/terosBattleServer/entity/powerusagescenario"
 	"github.com/cserrant/terosBattleServer/usecase/powerequip"
 	"github.com/cserrant/terosBattleServer/usecase/repositories"
@@ -18,9 +19,12 @@ type Forecast struct {
 type Calculation struct {
 	Repositories *repositories.RepositoryCollection
 	Setup *powerusagescenario.Setup
+
 	Attack	*AttackForecast
 	CounterAttackSetup *powerusagescenario.Setup
 	CounterAttack *AttackForecast
+
+	HealingForecast *HealingForecast
 }
 
 // AttackForecast shows what will happen if the power used is offensive.
@@ -32,14 +36,9 @@ type AttackForecast struct {
 
 // CalculateForecast gives a numerical prediction of the power's effect.
 func (forecast *Forecast) CalculateForecast() {
-	for _, targetID := range forecast.Setup.Targets {
-		attack := forecast.CalculateAttackForecast(targetID)
-		var counterAttack *AttackForecast
-		var counterAttackSetup *powerusagescenario.Setup
-		if forecast.isCounterattackPossible(targetID) {
-			counterAttackSetup, counterAttack = forecast.createCounterAttackForecast(targetID)
-		}
+	powerToUse := forecast.Repositories.PowerRepo.GetPowerByID(forecast.Setup.PowerID)
 
+	for _, targetID := range forecast.Setup.Targets {
 		calculation := Calculation{
 			Setup: &powerusagescenario.Setup{
 				UserID:          forecast.Setup.UserID,
@@ -48,15 +47,37 @@ func (forecast *Forecast) CalculateForecast() {
 				IsCounterAttack: false,
 			},
 			Repositories: &repositories.RepositoryCollection{
-				SquaddieRepo:    forecast.Repositories.SquaddieRepo,
-				PowerRepo:       forecast.Repositories.PowerRepo,
+				SquaddieRepo: forecast.Repositories.SquaddieRepo,
+				PowerRepo:    forecast.Repositories.PowerRepo,
 			},
-			Attack: attack,
-			CounterAttackSetup: counterAttackSetup,
-			CounterAttack: counterAttack,
 		}
+
+		if powerToUse.AttackEffect != nil {
+			forecast.addAttackAndCounterAttackToCalculation(targetID, &calculation)
+		}
+		if powerToUse.HealingEffect != nil {
+			forecast.addHealingEffectToCalculation(targetID, &calculation)
+		}
+
 		forecast.ForecastedResultPerTarget = append(forecast.ForecastedResultPerTarget, calculation)
 	}
+}
+
+func (forecast *Forecast) addAttackAndCounterAttackToCalculation(targetID string, calculation *Calculation) {
+	attack := forecast.CalculateAttackForecast(targetID)
+	var counterAttack *AttackForecast
+	var counterAttackSetup *powerusagescenario.Setup
+	if forecast.isCounterattackPossible(targetID) {
+		counterAttackSetup, counterAttack = forecast.createCounterAttackForecast(targetID)
+	}
+
+	calculation.Attack = attack
+	calculation.CounterAttackSetup = counterAttackSetup
+	calculation.CounterAttack = counterAttack
+}
+
+func (forecast *Forecast) addHealingEffectToCalculation(targetID string, calculation *Calculation) {
+	calculation.HealingForecast = forecast.CalculateHealingForecast(targetID)
 }
 
 func (forecast *Forecast) isCounterattackPossible(targetID string) bool {
@@ -109,5 +130,23 @@ func (forecast *Forecast) CalculateAttackForecast(targetID string) *AttackForeca
 		AttackerContext: attackerContext,
 		DefenderContext: defenderContext,
 		VersusContext: versusContext,
+	}
+}
+
+type HealingForecast struct {
+	RawHitPointsRestored int
+}
+
+// CalculateHealingForecast figures out what will happen when this attack power is used.
+func (forecast *Forecast) CalculateHealingForecast(targetID string) *HealingForecast {
+	powerToUse := forecast.Repositories.PowerRepo.GetPowerByID(forecast.Setup.PowerID)
+	squaddieUser := forecast.Repositories.SquaddieRepo.GetOriginalSquaddieByID(forecast.Setup.UserID)
+	squaddieMind := squaddieUser.Offense.Mind
+	if powerToUse.HealingEffect.HealingAdjustmentBasedOnUserMind == power.Half {
+		squaddieMind /= 2
+	}
+
+	return &HealingForecast{
+		RawHitPointsRestored: powerToUse.HealingEffect.HitPointsHealed + squaddieMind,
 	}
 }

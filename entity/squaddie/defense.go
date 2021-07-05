@@ -27,28 +27,44 @@ func (defense *Defense) SetBarrierToMax() {
 
 // ReduceHitPoints reduces the squaddie's HP, possibly killing them.
 //   Hit Points cannot e reduced below 0.
-func (defense *Defense) ReduceHitPoints(damage int) {
+func (defense *Defense) ReduceHitPoints(damage int) int {
+	actualDamageTaken := damage
+	if defense.CurrentHitPoints < damage {
+		actualDamageTaken = defense.CurrentHitPoints
+	}
+
 	defense.CurrentHitPoints -= damage
 
 	if defense.CurrentHitPoints < 0 {
 		defense.CurrentHitPoints = 0
 	}
+	return actualDamageTaken
 }
 
 // ReduceBarrier reduces the squaddie's Barrier.
 //   Barrier cannot e reduced below 0.
-func (defense *Defense) ReduceBarrier(burn int) {
+func (defense *Defense) ReduceBarrier(burn int) int {
+	actualBarrierBurn := burn
+	if defense.CurrentBarrier < burn {
+		actualBarrierBurn = defense.CurrentBarrier
+	}
+
 	defense.CurrentBarrier -= burn
 
 	if defense.CurrentBarrier < 0 {
 		defense.CurrentBarrier = 0
 	}
+
+	return actualBarrierBurn
 }
 
 // TakeDamageDistribution reduces the Squaddie's Barrier and Hit Points based on the distribution.
 func (defense *Defense) TakeDamageDistribution(distribution *damagedistribution.DamageDistribution) {
-	defense.ReduceBarrier(distribution.DamageAbsorbedByBarrier)
-	defense.ReduceHitPoints(distribution.DamageDealt)
+	actualBarrierBurn := defense.ReduceBarrier(distribution.DamageAbsorbedByBarrier)
+	actualDamageTaken := defense.ReduceHitPoints(distribution.RawDamageDealt)
+
+	distribution.ActualBarrierBurn = actualBarrierBurn
+	distribution.ActualDamageTaken = actualDamageTaken
 }
 
 // IsDead returns true if the squaddie has died
