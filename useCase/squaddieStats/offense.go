@@ -7,18 +7,61 @@ import (
 	"github.com/cserrant/terosBattleServer/usecase/repositories"
 )
 
-func getSquaddieAndAttackPower(squaddieID, powerID string, repos *repositories.RepositoryCollection) (*squaddie.Squaddie, *power.Power, error) {
+func getSquaddie(squaddieID string, repos *repositories.RepositoryCollection) (*squaddie.Squaddie, error) {
 	squaddie := repos.SquaddieRepo.GetOriginalSquaddieByID(squaddieID)
 	if squaddie == nil {
-		return nil, nil, fmt.Errorf("squaddie could not be found, ID: %s", squaddieID)
+		return nil, fmt.Errorf("squaddie could not be found, ID: %s", squaddieID)
 	}
+	return squaddie, nil
+}
+
+func getHealingPower(powerID string, repos *repositories.RepositoryCollection) (*power.Power, error) {
 	power := repos.PowerRepo.GetPowerByID(powerID)
 	if power == nil {
-		return nil, nil, fmt.Errorf("power could not be found, ID: %s", powerID)
+		return nil, fmt.Errorf("power could not be found, ID: %s", powerID)
+	}
+	if power.HealingEffect == nil {
+		return nil, fmt.Errorf("cannot heal with power, ID: %s", powerID)
+	}
+	return power, nil
+}
+
+func getAttackPower(powerID string, repos *repositories.RepositoryCollection) (*power.Power, error) {
+	power := repos.PowerRepo.GetPowerByID(powerID)
+	if power == nil {
+		return nil, fmt.Errorf("power could not be found, ID: %s", powerID)
 	}
 	if power.AttackEffect == nil {
-		return nil, nil, fmt.Errorf("cannot attack with power, ID: %s", powerID)
+		return nil, fmt.Errorf("cannot attack with power, ID: %s", powerID)
 	}
+	return power, nil
+}
+
+func getSquaddieAndHealingPower(squaddieID, powerID string, repos *repositories.RepositoryCollection) (*squaddie.Squaddie, *power.Power, error) {
+	squaddie, squaddieErr := getSquaddie(squaddieID, repos)
+	if squaddieErr != nil {
+		return nil, nil, squaddieErr
+	}
+
+	power, powerErr := getHealingPower(powerID, repos)
+	if powerErr != nil {
+		return nil, nil, powerErr
+	}
+
+	return squaddie, power, nil
+}
+
+func getSquaddieAndAttackPower(squaddieID, powerID string, repos *repositories.RepositoryCollection) (*squaddie.Squaddie, *power.Power, error) {
+	squaddie, squaddieErr := getSquaddie(squaddieID, repos)
+	if squaddieErr != nil {
+		return nil, nil, squaddieErr
+	}
+
+	power, powerErr := getAttackPower(powerID, repos)
+	if powerErr != nil {
+		return nil, nil, powerErr
+	}
+
 	return squaddie, power, nil
 }
 
@@ -121,4 +164,22 @@ func GetSquaddieCanCriticallyHitWithPower(squaddieID, powerID string, repos *rep
 	}
 
 	return powerToMeasure.AttackEffect.CanCriticallyHit(), nil
+}
+
+// GetHitPointsHealedWithPower returns the actual number of hit points healed.
+func GetHitPointsHealedWithPower(squaddieID, powerID string, repos *repositories.RepositoryCollection) (int, error) {
+	squaddieToHeal, healingPower, err := getSquaddieAndHealingPower(squaddieID, powerID, repos)
+	if err != nil {
+		return 0, nil
+	}
+
+	squaddieMindBonus := squaddieToHeal.Offense.Mind
+	if healingPower.HealingEffect.HealingAdjustmentBasedOnUserMind == power.Half {
+		squaddieMindBonus /= 2
+	}
+	if healingPower.HealingEffect.HealingAdjustmentBasedOnUserMind == power.Zero {
+		squaddieMindBonus = 0
+	}
+
+	return healingPower.HealingEffect.HitPointsHealed + squaddieMindBonus, nil
 }

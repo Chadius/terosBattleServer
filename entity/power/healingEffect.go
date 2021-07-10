@@ -8,6 +8,8 @@ type HealingEffect struct {
 
 // HealingAdjustmentBasedOnUserMind indicates how much the user's Mind should be adjusted.
 type HealingAdjustmentBasedOnUserMind string
+
+// User's Mind is added to most healing abilities (Full). But it may be at a Half bonus or doesn't affect (Zero)
 const (
 	Full HealingAdjustmentBasedOnUserMind = "full"
 	Half HealingAdjustmentBasedOnUserMind = "half"

@@ -71,3 +71,13 @@ func (defense *Defense) TakeDamageDistribution(distribution *damagedistribution.
 func (defense *Defense) IsDead() bool {
 	return defense.CurrentHitPoints <= 0
 }
+
+// GainHitPoints heals the squaddie and returns the number of hit points healed.
+func (defense *Defense) GainHitPoints(hitPoints int) int {
+	actualHealingReceived := hitPoints
+	if defense.CurrentHitPoints + actualHealingReceived >= defense.MaxHitPoints {
+		actualHealingReceived = defense.MaxHitPoints - defense.CurrentHitPoints
+	}
+	defense.CurrentHitPoints += actualHealingReceived
+	return actualHealingReceived
+}

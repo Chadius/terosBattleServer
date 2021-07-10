@@ -279,3 +279,54 @@ func (suite *squaddieOffense) TestCanCriticallyHitWithPower(checker *C) {
 	checker.Assert(blotCanCritErr, IsNil)
 	checker.Assert(blotCanCrit, Equals, false)
 }
+
+type healingPower struct {
+	lini			*squaddie.Squaddie
+	healingStaff *power.Power
+
+	powerRepo 		*power.Repository
+	squaddieRepo 	*squaddie.Repository
+
+	repos *repositories.RepositoryCollection
+}
+
+var _ = Suite(&healingPower{})
+
+func (suite *healingPower) SetUpTest(checker *C) {
+	suite.lini = squaddie.NewSquaddie("lini")
+	suite.lini.Identification.Name = "lini"
+
+	suite.healingStaff = power.NewPower("healing_staff")
+	suite.healingStaff.PowerType = power.Spell
+
+	suite.squaddieRepo = squaddie.NewSquaddieRepository()
+	suite.squaddieRepo.AddSquaddies([]*squaddie.Squaddie{suite.lini})
+
+	suite.powerRepo = power.NewPowerRepository()
+	suite.powerRepo.AddSlicePowerSource([]*power.Power{suite.healingStaff})
+
+	suite.repos = &repositories.RepositoryCollection{
+		SquaddieRepo: suite.squaddieRepo,
+		PowerRepo: suite.powerRepo,
+	}
+
+	powerequip.LoadAllOfSquaddieInnatePowers(
+		suite.lini,
+		[]*power.Reference{
+			suite.healingStaff.GetReference(),
+		},
+		suite.repos,
+	)
+}
+
+func (suite *healingPower) TestSquaddieKnowsHealingPotential(checker *C) {
+	suite.lini.Offense.Mind = 1
+	suite.healingStaff.HealingEffect = &power.HealingEffect{
+		HitPointsHealed: 3,
+		HealingAdjustmentBasedOnUserMind: power.Full,
+	}
+
+	staffHeal, staffErr := squaddiestats.GetHitPointsHealedWithPower(suite.lini.Identification.ID, suite.healingStaff.ID, suite.repos)
+	checker.Assert(staffErr, IsNil)
+	checker.Assert(staffHeal, Equals, 4)
+}

@@ -350,7 +350,6 @@ func (suite *resultOnAttack) TestCounterAttacksApplyLast(checker *C) {
 	checker.Assert(suite.resultFireballOnBandits.ResultPerTarget[3].TargetID, Equals, suite.mysticMage.Identification.ID)
 }
 
-
 func (suite *resultOnAttack) TestDeadSquaddiesCannotCounterAttack(checker *C) {
 	suite.resultSpearOnBandit.DieRoller = &testutility.AlwaysHitDieRoller{}
 
@@ -376,7 +375,6 @@ func (suite *resultOnAttack) TestDeadSquaddiesCannotCounterAttack(checker *C) {
 	checker.Assert(suite.bandit.Defense.IsDead(), Equals, true)
 	checker.Assert(suite.resultSpearOnBandit.ResultPerTarget, HasLen, 1)
 }
-
 
 type EquipPowerWhenCommitting struct {
 	teros			*squaddie.Squaddie
@@ -539,4 +537,78 @@ func (suite *EquipPowerWhenCommitting) TestSquaddieWillNotEquipPowerIfNoneExistA
 	suite.forecastFireballOnBandit.CalculateForecast()
 	suite.resultFireballOnBandit.Commit()
 	checker.Assert(suite.mysticMage.PowerCollection.HasEquippedPower(), Equals, false)
+}
+
+type ResultOnHealing struct {
+	lini *squaddie.Squaddie
+	teros *squaddie.Squaddie
+
+	healingStaff *power.Power
+
+	powerRepo 		*power.Repository
+	squaddieRepo 	*squaddie.Repository
+	repos *repositories.RepositoryCollection
+
+	forecastHealingStaffOnTeros *powerattackforecast.Forecast
+	resultHealingStaffOnTeros *powercommit.Result
+}
+
+var _ = Suite(&ResultOnHealing{})
+
+func (suite *ResultOnHealing) SetUpTest(checker *C) {
+	suite.teros = squaddie.NewSquaddie("Teros")
+	suite.teros.Identification.ID = "squaddie_teros"
+	suite.teros.Identification.Name = "Teros"
+
+	suite.lini = squaddie.NewSquaddie("Lini")
+	suite.lini.Identification.ID = "squaddie_lini"
+	suite.lini.Identification.Name = "Lini"
+
+	suite.healingStaff = power.NewPower("healing_staff")
+	suite.healingStaff.PowerType = power.Spell
+	suite.healingStaff.HealingEffect = &power.HealingEffect{
+		HitPointsHealed: 3,
+	}
+
+	suite.squaddieRepo = squaddie.NewSquaddieRepository()
+	suite.squaddieRepo.AddSquaddies([]*squaddie.Squaddie{suite.teros, suite.lini})
+
+	suite.powerRepo = power.NewPowerRepository()
+	suite.powerRepo.AddSlicePowerSource([]*power.Power{suite.healingStaff})
+
+	suite.repos = &repositories.RepositoryCollection{PowerRepo: suite.powerRepo, SquaddieRepo: suite.squaddieRepo}
+
+	suite.forecastHealingStaffOnTeros = &powerattackforecast.Forecast{
+		Setup: powerusagescenario.Setup{
+			UserID:          suite.lini.Identification.ID,
+			PowerID:         suite.healingStaff.ID,
+			Targets:         []string{suite.teros.Identification.ID},
+			IsCounterAttack: false,
+		},
+		Repositories: &repositories.RepositoryCollection{
+			SquaddieRepo:    suite.squaddieRepo,
+			PowerRepo:       suite.powerRepo,
+		},
+	}
+
+	suite.resultHealingStaffOnTeros = &powercommit.Result{
+		Forecast: suite.forecastHealingStaffOnTeros,
+	}
+}
+
+func (suite *ResultOnHealing) TestHealResultShowsHitPointsRestored(checker *C) {
+	suite.teros.Defense.CurrentHitPoints = 1
+	suite.lini.Offense.Mind = 1
+
+	suite.forecastHealingStaffOnTeros.CalculateForecast()
+	suite.resultHealingStaffOnTeros.Commit()
+
+	checker.Assert(suite.resultHealingStaffOnTeros.ResultPerTarget[0].PowerID, Equals, suite.healingStaff.ID)
+	checker.Assert(suite.resultHealingStaffOnTeros.ResultPerTarget[0].Healing.HitPointsRestored, Equals, 4)
+
+	checker.Assert(
+		suite.teros.Defense.CurrentHitPoints,
+		Equals,
+		1 + suite.resultHealingStaffOnTeros.ResultPerTarget[0].Healing.HitPointsRestored,
+	)
 }

@@ -85,3 +85,9 @@ func (suite *SquaddieDefenseSuite) TestSquaddiesAreDeadWhenAtZeroHitPoints(check
 	suite.teros.Defense.ReduceHitPoints(suite.teros.Defense.MaxHitPoints)
 	checker.Assert(suite.teros.Defense.IsDead(), Equals, true)
 }
+
+func (suite *SquaddieDefenseSuite) TestGainHitPoints(checker *C) {
+	suite.teros.Defense.CurrentHitPoints = 1
+	healingAmount := suite.teros.Defense.GainHitPoints(suite.teros.Defense.MaxHitPoints)
+	checker.Assert(healingAmount, Equals, suite.teros.Defense.MaxHitPoints - 1)
+}

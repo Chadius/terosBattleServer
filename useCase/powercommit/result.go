@@ -6,6 +6,7 @@ import (
 	"github.com/cserrant/terosBattleServer/usecase/powerattackforecast"
 	"github.com/cserrant/terosBattleServer/usecase/powerequip"
 	"github.com/cserrant/terosBattleServer/usecase/repositories"
+	"github.com/cserrant/terosBattleServer/usecase/squaddiestats"
 	"github.com/cserrant/terosBattleServer/utility"
 )
 
@@ -23,30 +24,57 @@ type ResultPerTarget struct {
 	PowerID string
 	TargetID string
 	Attack *AttackResult
-	AttackRoll, DefendRoll int
-	AttackerToHitBonus, DefenderToHitPenalty int
-	AttackerTotal, DefenderTotal int
+	Healing *HealResult
 }
 
 // AttackResult shows what happens when the power was an attack.
 type AttackResult struct {
+	AttackRoll, DefendRoll int
+	AttackerToHitBonus, DefenderToHitPenalty int
+	AttackerTotal, DefenderTotal int
 	HitTarget           bool
 	CriticallyHitTarget bool
 	Damage *damagedistribution.DamageDistribution
 }
 
+// HealResult shows the effects of recovery abilities.
+type HealResult struct {
+	HitPointsRestored int
+}
+
 // Commit tries to use the power and records the effects.
 func (result *Result) Commit() {
 	for _, calculation := range result.Forecast.ForecastedResultPerTarget {
-		resultForTarget := result.calculateResultForThisTarget(calculation.Setup, calculation.Attack, result.Forecast.Repositories)
-		result.ResultPerTarget = append(result.ResultPerTarget, resultForTarget)
+		attackResultForTarget := result.getAttackResult(&calculation)
+		if attackResultForTarget != nil {
+			result.ResultPerTarget = append(result.ResultPerTarget, attackResultForTarget)
+		}
+
+		healResultForTarget := result.getHealingResult(&calculation)
+		if healResultForTarget != nil {
+			result.ResultPerTarget = append(result.ResultPerTarget, healResultForTarget)
+		}
 	}
 	for _, calculation := range result.Forecast.ForecastedResultPerTarget {
 		if result.isCounterAttackPossible(calculation) {
-			counterAttackResultForTarget := result.calculateResultForThisTarget(calculation.CounterAttackSetup, calculation.CounterAttack, result.Forecast.Repositories)
+			counterAttackResultForTarget := result.calculateAttackResultForThisTarget(calculation.CounterAttackSetup, calculation.CounterAttack, result.Forecast.Repositories)
 			result.ResultPerTarget = append(result.ResultPerTarget, counterAttackResultForTarget)
 		}
 	}
+}
+
+func (result *Result) getAttackResult(calculation *powerattackforecast.Calculation) *ResultPerTarget {
+	if calculation.Attack == nil {
+		return nil
+	}
+	return result.calculateAttackResultForThisTarget(calculation.Setup, calculation.Attack, result.Forecast.Repositories)
+}
+
+func (result *Result) getHealingResult(calculation *powerattackforecast.Calculation) *ResultPerTarget {
+	if calculation.HealingForecast == nil {
+		return nil
+	}
+	return result.calculateHealingResultForThisTarget(calculation.Setup, calculation.HealingForecast, result.Forecast.Repositories)
 }
 
 func (result *Result) isCounterAttackPossible(calculation powerattackforecast.Calculation) bool {
@@ -54,15 +82,15 @@ func (result *Result) isCounterAttackPossible(calculation powerattackforecast.Ca
 		return false
 	}
 
-	counterattacker := calculation.Repositories.SquaddieRepo.GetOriginalSquaddieByID(calculation.CounterAttackSetup.UserID)
-	if counterattacker.Defense.IsDead() {
+	counterAttacker := calculation.Repositories.SquaddieRepo.GetOriginalSquaddieByID(calculation.CounterAttackSetup.UserID)
+	if counterAttacker.Defense.IsDead() {
 		return false
 	}
 
 	return true
 }
 
-func (result *Result) calculateResultForThisTarget(setup *powerusagescenario.Setup, attack *powerattackforecast.AttackForecast, repositories *repositories.RepositoryCollection) *ResultPerTarget {
+func (result *Result) calculateAttackResultForThisTarget(setup *powerusagescenario.Setup, attack *powerattackforecast.AttackForecast, repositories *repositories.RepositoryCollection) *ResultPerTarget {
 	results := &ResultPerTarget{
 		UserID:   setup.UserID,
 		TargetID: setup.Targets[0],
@@ -74,17 +102,17 @@ func (result *Result) calculateResultForThisTarget(setup *powerusagescenario.Set
 	powerequip.SquaddieEquipPower(attackingSquaddie, setup.PowerID, repositories)
 
 	attackRoll, defendRoll := result.DieRoller.RollTwoDice()
-	results.AttackerToHitBonus = attack.VersusContext.ToHit.AttackerToHitBonus
-	results.DefenderToHitPenalty = attack.VersusContext.ToHit.DefenderToHitPenalty
+	results.Attack.AttackerToHitBonus = attack.VersusContext.ToHit.AttackerToHitBonus
+	results.Attack.DefenderToHitPenalty = attack.VersusContext.ToHit.DefenderToHitPenalty
 
-	results.AttackRoll = attackRoll
-	results.DefendRoll = defendRoll
+	results.Attack.AttackRoll = attackRoll
+	results.Attack.DefendRoll = defendRoll
 
-	results.AttackerTotal = results.AttackRoll + results.AttackerToHitBonus
-	results.DefenderTotal = results.DefendRoll + results.DefenderToHitPenalty
+	results.Attack.AttackerTotal = results.Attack.AttackRoll + results.Attack.AttackerToHitBonus
+	results.Attack.DefenderTotal = results.Attack.DefendRoll + results.Attack.DefenderToHitPenalty
 
-	results.Attack.HitTarget = results.AttackerTotal >= results.DefenderTotal
-	results.Attack.CriticallyHitTarget = attack.AttackerContext.CanCritical && results.AttackerTotal >= results.DefenderTotal + attack.AttackerContext.CriticalHitThreshold
+	results.Attack.HitTarget = results.Attack.AttackerTotal >= results.Attack.DefenderTotal
+	results.Attack.CriticallyHitTarget = attack.AttackerContext.CanCritical && results.Attack.AttackerTotal >= results.Attack.DefenderTotal + attack.AttackerContext.CriticalHitThreshold
 
 	if !results.Attack.HitTarget {
 		results.Attack.Damage = &damagedistribution.DamageDistribution{
@@ -104,4 +132,27 @@ func (result *Result) calculateResultForThisTarget(setup *powerusagescenario.Set
 	targetSquaddie.Defense.TakeDamageDistribution(results.Attack.Damage)
 
 	return results
+}
+
+func (result *Result) calculateHealingResultForThisTarget(setup *powerusagescenario.Setup, forecast *powerattackforecast.HealingForecast, repositories *repositories.RepositoryCollection) *ResultPerTarget {
+	resultForThisTarget := &ResultPerTarget{
+		UserID:   setup.UserID,
+		TargetID: setup.Targets[0],
+		PowerID:  setup.PowerID,
+		Healing: &HealResult{
+			HitPointsRestored: 0,
+		},
+	}
+
+	healingSquaddie := repositories.SquaddieRepo.GetOriginalSquaddieByID(setup.UserID)
+	powerequip.SquaddieEquipPower(healingSquaddie, setup.PowerID, repositories)
+
+	targetSquaddie := repositories.SquaddieRepo.GetOriginalSquaddieByID(resultForThisTarget.TargetID)
+	maximumHealing, err := squaddiestats.GetHitPointsHealedWithPower(setup.UserID, setup.PowerID, repositories)
+	if err != nil {
+		return resultForThisTarget
+	}
+	hitPointsRestored := targetSquaddie.Defense.GainHitPoints(maximumHealing)
+	resultForThisTarget.Healing.HitPointsRestored = hitPointsRestored
+	return resultForThisTarget
 }

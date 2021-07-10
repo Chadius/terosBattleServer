@@ -102,8 +102,8 @@ func printAttackReport(result *powercommit.ResultPerTarget, repositories *reposi
 
 	println(attacker.Identification.Name, "attacks", target.Identification.Name, "with", attackingPower.Name)
 
-	println(attacker.Identification.Name, "attacks with a", result.AttackRoll, "+", result.AttackerToHitBonus, "=", result.AttackerTotal)
-	println(target.Identification.Name, "defends with a", result.DefendRoll, "+", result.DefenderToHitPenalty, "=", result.DefenderTotal)
+	println(attacker.Identification.Name, "attacks with a", result.Attack.AttackRoll, "+", result.Attack.AttackerToHitBonus, "=", result.Attack.AttackerTotal)
+	println(target.Identification.Name, "defends with a", result.Attack.DefendRoll, "+", result.Attack.DefenderToHitPenalty, "=", result.Attack.DefenderTotal)
 	if !result.Attack.HitTarget {
 		println("Missed")
 		return

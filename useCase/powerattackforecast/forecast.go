@@ -1,10 +1,10 @@
 package powerattackforecast
 
 import (
-	"github.com/cserrant/terosBattleServer/entity/power"
 	"github.com/cserrant/terosBattleServer/entity/powerusagescenario"
 	"github.com/cserrant/terosBattleServer/usecase/powerequip"
 	"github.com/cserrant/terosBattleServer/usecase/repositories"
+	"github.com/cserrant/terosBattleServer/usecase/squaddiestats"
 )
 
 // Forecast will store the information needed to explain what will happen when a squaddie
@@ -133,20 +133,21 @@ func (forecast *Forecast) CalculateAttackForecast(targetID string) *AttackForeca
 	}
 }
 
+// HealingForecast showcases beneficial abilities
 type HealingForecast struct {
 	RawHitPointsRestored int
 }
 
 // CalculateHealingForecast figures out what will happen when this attack power is used.
 func (forecast *Forecast) CalculateHealingForecast(targetID string) *HealingForecast {
-	powerToUse := forecast.Repositories.PowerRepo.GetPowerByID(forecast.Setup.PowerID)
-	squaddieUser := forecast.Repositories.SquaddieRepo.GetOriginalSquaddieByID(forecast.Setup.UserID)
-	squaddieMind := squaddieUser.Offense.Mind
-	if powerToUse.HealingEffect.HealingAdjustmentBasedOnUserMind == power.Half {
-		squaddieMind /= 2
+	maximumHealing, err := squaddiestats.GetHitPointsHealedWithPower(forecast.Setup.UserID, forecast.Setup.PowerID, forecast.Repositories)
+	if err != nil {
+		return &HealingForecast{
+			RawHitPointsRestored: 0,
+		}
 	}
 
 	return &HealingForecast{
-		RawHitPointsRestored: powerToUse.HealingEffect.HitPointsHealed + squaddieMind,
+		RawHitPointsRestored: maximumHealing,
 	}
 }

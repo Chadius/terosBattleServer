@@ -27,7 +27,7 @@ func (suite *HealingEffectLoadedFromData) SetUpTest(checker *C) {
   name: Heal
   id: power_heal
   power_type: Spell
-  healing_effect: 
+  healing_effect:
     hit_points_healed: 2
 `)
 
